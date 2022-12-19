@@ -18,7 +18,6 @@ enum proposal_status
 enum contract_state
 {
     CS_IDLE = 0,
-
     // Event states
     CS_INTRODUCTION = 1,
     CS_BREAKOUT_ROOMS = 2,
@@ -108,8 +107,6 @@ CONTRACT zeos1fractal
         uint64_t council_meeting_duration;
     };
 
-    // User actions to manage own account
-
     /// Creates a new member account for this fractal (allocates RAM)
     ACTION signup(const name& user);
 
@@ -135,6 +132,11 @@ CONTRACT zeos1fractal
         const bool& value
     );
 
-    // Fractal actions to manage weekly events
+    ACTION setintro(
+        const name& user,
+        const uint64_t& seconds
+    );
+
+    // TODO: add/update proposal actions
 
 };
