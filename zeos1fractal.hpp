@@ -49,6 +49,8 @@ CONTRACT zeos1fractal : contract
     {
         name user;
         uint64_t num_blocks; // duration of the introduction
+
+        uint64_t primary_key() const { return user.value; }
     };
     typedef eosio::multi_index<"intros"_n, introduction> intros_t;
 
@@ -61,6 +63,8 @@ CONTRACT zeos1fractal : contract
         string description;
         string ipfs;
         proposal_status status;
+
+        uint64_t primary_key() const { return id; }
     };
     // TODO: change to VRAM
     typedef eosio::multi_index<"proposals"_n, proposal> proposals_t;
@@ -70,6 +74,8 @@ CONTRACT zeos1fractal : contract
     {
         name user;
         vector<name> ranking;
+
+        uint64_t primary_key() const { return user.value; }
     };
     typedef eosio::multi_index<"modranks"_n, moderator_ranking> modranks_t;
 
@@ -78,6 +84,8 @@ CONTRACT zeos1fractal : contract
     {
         name user;
         vector<name> ranking;
+
+        uint64_t primary_key() const { return user.value; }
     };
     typedef eosio::multi_index<"introranks"_n, introduction_ranking> introranks_t;
 
@@ -86,6 +94,8 @@ CONTRACT zeos1fractal : contract
     {
         name user;
         vector<uint64_t> ranking;
+
+        uint64_t primary_key() const { return user.value; }
     };
     typedef eosio::multi_index<"propranks"_n, proposal_ranking> propranks_t;
 
@@ -93,8 +103,10 @@ CONTRACT zeos1fractal : contract
     TABLE joined
     {
         name user;
+
+        uint64_t primary_key() const { return user.value; }
     };
-    typedef eosio::multi_index<"joined"_n, joined> joined_t;
+    typedef eosio::multi_index<"joins"_n, joined> joins_t;
 
     // Singleton - Global stats
     TABLE global
@@ -115,6 +127,7 @@ CONTRACT zeos1fractal : contract
         uint64_t introduction_duration;
         uint64_t breakout_room_duration;
         uint64_t council_meeting_duration;
+        uint64_t early_join_duration;
     };
     eosio::singleton<"global"_n, global> _global;
 
