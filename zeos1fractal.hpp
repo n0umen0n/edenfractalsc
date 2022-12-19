@@ -2,7 +2,6 @@
 
 #include <map>
 #include <vector>
-#include <string>
 #include <eosio/eosio.hpp>
 #include <eosio/singleton.hpp>
 

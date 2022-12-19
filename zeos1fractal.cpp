@@ -8,11 +8,12 @@ zeos1fractal::zeos1fractal(
     contract(self, code, ds),
     _global(_self, _self.value)
 {
-
 }
 
 void zeos1fractal::init()
 {
+    require_auth(_self);
+    
     // empty all tables
     members_t members(_self, _self.value);
     intros_t introductions(_self, _self.value);
