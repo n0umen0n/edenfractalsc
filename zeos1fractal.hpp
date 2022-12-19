@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <eosio/eosio.hpp>
+#include <eosio/singleton.hpp>
 
 using namespace std;
 using namespace eosio;
@@ -24,8 +25,10 @@ enum contract_state
     CS_COUNCIL_MEETING = 3,
 };
 
-CONTRACT zeos1fractal
+CONTRACT zeos1fractal : contract
 {
+    public:
+    
     TABLE member
     {
         name user;                  // EOS account name
@@ -47,6 +50,7 @@ CONTRACT zeos1fractal
         name user;
         uint64_t seconds;
     };
+    typedef eosio::multi_index<"intros"_n, introduction> intros_t;
 
     // VRAM - ever expanding (can only add/modify items)
     TABLE proposal
@@ -58,6 +62,8 @@ CONTRACT zeos1fractal
         string ipfs;
         proposal_status status;
     };
+    // TODO: change to VRAM
+    typedef eosio::multi_index<"proposals"_n, proposal> proposals_t;
 
     // ongoing vote (like EOS BP voting)
     TABLE moderator_ranking
@@ -65,6 +71,7 @@ CONTRACT zeos1fractal
         name user;
         vector<name> ranking;
     };
+    typedef eosio::multi_index<"modranks"_n, moderator_ranking> modranks_t;
 
     // resets with every event
     TABLE introduction_ranking
@@ -72,6 +79,7 @@ CONTRACT zeos1fractal
         name user;
         vector<name> ranking;
     };
+    typedef eosio::multi_index<"introranks"_n, introduction_ranking> introranks_t;
 
     // resets with every event
     TABLE proposal_ranking
@@ -79,12 +87,14 @@ CONTRACT zeos1fractal
         name user;
         vector<uint64_t> ranking;
     };
+    typedef eosio::multi_index<"propranks"_n, proposal_ranking> propranks_t;
 
     // resets with every event
     TABLE joined
     {
         name user;
     };
+    typedef eosio::multi_index<"joined"_n, joined> joined_t;
 
     // Singleton - Global stats
     TABLE global
@@ -106,6 +116,16 @@ CONTRACT zeos1fractal
         uint64_t breakout_room_duration;
         uint64_t council_meeting_duration;
     };
+    eosio::singleton<"global"_n, global> _global;
+
+    zeos1fractal(
+        name self,
+        name code, 
+        datastream<const char *> ds
+    );
+
+    /// Initializes the contract/Resets contract
+    ACTION init();
 
     /// Creates a new member account for this fractal (allocates RAM)
     ACTION signup(const name& user);
@@ -139,4 +159,7 @@ CONTRACT zeos1fractal
 
     // TODO: add/update proposal actions
 
+    ACTION setevent(const uint64_t& block_height);
+
+    ACTION changestate();
 };
