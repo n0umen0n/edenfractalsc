@@ -77,9 +77,9 @@ void zeos1fractal::join(const name& user)
     check(members.find(user.value) != members.end(), "user is not signed up yet!");
     joins_t joins(_self, _self.value);
     check(joins.find(user.value) == joins.end(), "user has joined already!");
-    auto _g = _global.get();
-    check(_g.next_event_block_height > 0, "no event upcoming yet!");
-    check(static_cast<uint64_t>(current_block_number()) >= _g.next_event_block_height - _g.early_join_duration, "too early to join the event!");
+    auto g = _global.get();
+    check(g.next_event_block_height > 0, "no event upcoming yet!");
+    check(static_cast<uint64_t>(current_block_number()) >= g.next_event_block_height - g.early_join_duration, "too early to join the event!");
 
     joins.emplace(user, [&](auto& row){
         row.user = user;
@@ -92,7 +92,24 @@ void zeos1fractal::addlink(
     const string& value
 )
 {
+    require_auth(user);
+    members_t members(_self, _self.value);
+    auto u = members.find(user.value);
+    check(u != members.end(), "user is not signed up yet!");
 
+    // check if the key/value pair already exists for (some other) user
+    for(auto it = members.begin(); it != members.end(); ++it)
+    {
+        auto entry = it->links.find(key);
+        if(entry != it->links.end())
+        {
+            check(entry->second != value, "key/value pair already exists!");
+        }
+    }
+
+    members.modify(u, user, [&](auto& row){
+        row.links[key] = value;
+    });
 }
 
 void zeos1fractal::setacceptmod(
@@ -100,7 +117,14 @@ void zeos1fractal::setacceptmod(
     const bool& value
 )
 {
+    require_auth(user);
+    members_t members(_self, _self.value);
+    auto u = members.find(user.value);
+    check(u != members.end(), "user is not signed up yet!");
 
+    members.modify(u, user, [&](auto& row){
+        row.accept_moderator = value;
+    });
 }
 
 void zeos1fractal::setacceptdel(
@@ -108,7 +132,14 @@ void zeos1fractal::setacceptdel(
     const bool& value
 )
 {
+    require_auth(user);
+    members_t members(_self, _self.value);
+    auto u = members.find(user.value);
+    check(u != members.end(), "user is not signed up yet!");
 
+    members.modify(u, user, [&](auto& row){
+        row.accept_delegate = value;
+    });
 }
 
 void zeos1fractal::setintro(
@@ -116,15 +147,69 @@ void zeos1fractal::setintro(
     const uint64_t& num_blocks
 )
 {
+    require_auth(user);
+    members_t members(_self, _self.value);
+    check(members.find(user.value) != members.end(), "user is not signed up yet!");
 
+    // TODO
 }
 
 void zeos1fractal::setevent(const uint64_t& block_height)
 {
-
+    require_auth(_self);
+    auto g = _global.get();
+    
+    if(block_height == 0)
+    {
+        g.next_event_block_height = 0;
+        _global.set(g, _self);
+    }
+    else
+    {
+        check(block_height > static_cast<uint64_t>(current_block_number()), "block_height too low: event must start in the future!");
+        g.next_event_block_height = block_height;
+        _global.set(g, _self);
+    }
 }
 
 void zeos1fractal::changestate()
 {
+    auto g = _global.get();
+    uint64_t cur_bh = static_cast<uint64_t>(current_block_number());
 
+    switch(g.state)
+    {
+        case CS_IDLE:
+        {
+            check(cur_bh > g.next_event_block_height, "too early to move into INTRODUCTION state!");
+            g.state = CS_INTRODUCTION;
+            _global.set(g, _self);
+        }
+        break;
+
+        case CS_INTRODUCTION:
+        {
+            check(cur_bh > g.next_event_block_height + g.introduction_duration, "too early to move into BREAKOUT_ROOMS state!");
+            g.state = CS_BREAKOUT_ROOMS;
+            _global.set(g, _self);
+        }
+        break;
+
+        case CS_BREAKOUT_ROOMS:
+        {
+            check(cur_bh > g.next_event_block_height + g.introduction_duration + g.breakout_room_duration, "too early to move into COUNCIL_MEETING state!");
+            g.state = CS_COUNCIL_MEETING;
+            _global.set(g, _self);
+        }
+        break;
+
+        case CS_COUNCIL_MEETING:
+        {
+            check(cur_bh > g.next_event_block_height + g.introduction_duration + g.breakout_room_duration + g.council_meeting_duration, "too early to move into IDLE state!");
+            check(g.next_event_block_height == 0 || g.next_event_block_height > cur_bh, "next event is not yet set by council! call 'setevent' to creat a new event.");
+            g.state = CS_IDLE;
+            _global.set(g, _self);
+        }
+        break;
+    }
 }
