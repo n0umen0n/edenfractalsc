@@ -10,11 +10,9 @@ zeos1fractal::zeos1fractal(
 {
 }
 
-void zeos1fractal::init()
+void zeos1fractal::cleartables()
 {
     require_auth(_self);
-    
-    // empty all tables
     members_t members(_self, _self.value);
     intros_t introductions(_self, _self.value);
     modranks_t modranks(_self, _self.value);
@@ -27,6 +25,14 @@ void zeos1fractal::init()
     for(auto it = introranks.begin(); it != introranks.end(); ++it) introranks.erase(it);
     for(auto it = propranks.begin(); it != propranks.end(); ++it) propranks.erase(it);
     for(auto it = joins.begin(); it != joins.end(); ++it) joins.erase(it);
+    if(_global.exists()) _global.remove();
+}
+
+void zeos1fractal::init()
+{
+    require_auth(_self);
+    cleartables();
+
     _global.set({
         CS_IDLE,
         0,
@@ -78,6 +84,7 @@ void zeos1fractal::join(const name& user)
     check(members.find(user.value) != members.end(), "user is not signed up yet!");
     joins_t joins(_self, _self.value);
     check(joins.find(user.value) == joins.end(), "user has joined already!");
+    check(_global.exists(), "'global' not initialized! call 'init' first");
     auto g = _global.get();
     check(g.next_event_block_height > 0, "no event upcoming yet!");
     check(static_cast<uint64_t>(current_block_number()) >= g.next_event_block_height - g.early_join_duration, "too early to join the event!");
@@ -158,6 +165,7 @@ void zeos1fractal::setintro(
 void zeos1fractal::setevent(const uint64_t& block_height)
 {
     require_auth(_self);
+    check(_global.exists(), "'global' not initialized! call 'init' first");
     auto g = _global.get();
     
     if(block_height == 0)
@@ -175,6 +183,8 @@ void zeos1fractal::setevent(const uint64_t& block_height)
 
 void zeos1fractal::changestate()
 {
+    // anyone can execute this action
+    check(_global.exists(), "'global' not initialized! call 'init' first");
     auto g = _global.get();
     uint64_t cur_bh = static_cast<uint64_t>(current_block_number());
 

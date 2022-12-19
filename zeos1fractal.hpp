@@ -8,22 +8,17 @@
 using namespace std;
 using namespace eosio;
 
-enum proposal_status
-{
-    PS_PROPOSED = 0,
-    PS_UNDER_REVIEW = 1,
-    PS_APPROVED = 2,
-    PS_DENIED = 3,
-};
+// proposal status
+#define PS_PROPOSED         0
+#define PS_UNDER_REVIEW     1
+#define PS_APPROVED         2
+#define PS_DENIED           3
 
-enum contract_state
-{
-    CS_IDLE = 0,
-    // Event states
-    CS_INTRODUCTION = 1,
-    CS_BREAKOUT_ROOMS = 2,
-    CS_COUNCIL_MEETING = 3,
-};
+// contract states
+#define CS_IDLE             0
+#define CS_INTRODUCTION     1
+#define CS_BREAKOUT_ROOMS   2
+#define CS_COUNCIL_MEETING  3
 
 CONTRACT zeos1fractal : contract
 {
@@ -62,7 +57,7 @@ CONTRACT zeos1fractal : contract
         string caption;
         string description;
         string ipfs;
-        proposal_status status;
+        uint64_t status;
 
         uint64_t primary_key() const { return id; }
     };
@@ -111,7 +106,7 @@ CONTRACT zeos1fractal : contract
     // Singleton - Global stats
     TABLE global
     {
-        contract_state state;
+        uint64_t state;
         uint64_t proposal_count;
         uint64_t event_count;
         vector<name> moderator_ranking;
@@ -137,7 +132,10 @@ CONTRACT zeos1fractal : contract
         datastream<const char *> ds
     );
 
-    /// Initializes the contract/Resets contract
+    /// Clears all tables of the smart contract (useful if table schema needs update)
+    ACTION cleartables();
+
+    /// Initializes the contract and resets all tables
     ACTION init();
 
     /// Creates a new member account for this fractal (allocates RAM)
