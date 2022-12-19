@@ -53,7 +53,7 @@ void zeos1fractal::setacceptdel(
 
 void zeos1fractal::setintro(
     const name& user,
-    const uint64_t& seconds
+    const uint64_t& num_blocks
 )
 {
 

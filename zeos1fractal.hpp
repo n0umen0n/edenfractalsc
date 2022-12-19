@@ -28,7 +28,7 @@ enum contract_state
 CONTRACT zeos1fractal : contract
 {
     public:
-    
+
     TABLE member
     {
         name user;                  // EOS account name
@@ -48,7 +48,7 @@ CONTRACT zeos1fractal : contract
     TABLE introduction
     {
         name user;
-        uint64_t seconds;
+        uint64_t num_blocks; // duration of the introduction
     };
     typedef eosio::multi_index<"intros"_n, introduction> intros_t;
 
