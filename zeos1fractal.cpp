@@ -18,7 +18,10 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
   usrpropvote_t usrvote(_self, _self.value);
   const auto &voteiter = usrvote.find(user.value);
 
-  // meaning user has voted before
+  proposals_t proptab(_self, _self.value);
+
+  // USER HAS VOTED BEFORE, SO ADJUSTING BY HIS PREVIOUS VOTE, AND DELETING HIS
+  // VOTE TABLE
   if (voteiter != usrvote.end())
 
   {
@@ -31,10 +34,10 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
 
       check(proprow == proptab.end(), "Proposal with such ID does not exist.");
 
-      // uint64_t adjustedbal = baliter.balance.amount / (i + 1);
+      uint64_t adjustedbaldec = baliter.balance.amount / (i + 1);
 
       proptab.modify(proprow, user, [&](auto &contract) {
-        contract.totaltokens -= adjustedbal;
+        contract.totaltokens -= adjustedbaldec;
       });
 
       if (voteiter.option[i] == 0)
@@ -63,6 +66,7 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
     usrvote.erase(voteiter);
   }
 
+  // SAVING NEW USERS VOTE AND THEN ADJUSTING PROPOSAL BY TOKEN WEIGHTS
   usrvote.emplace(_self, [&](auto &contract) {
     contract.user = user;
     contract.ids = ids;
@@ -77,8 +81,10 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
     check(proprow == proptab.end(),
           "Proposal with such ID does not exist (1).");
 
+    uint64_t adjustedbalinc = baliter.balance.amount / (i + 1);
+
     proptab.modify(proprow, user, [&](auto &contract) {
-      contract.totaltokens -= adjustedbal;
+      contract.totaltokens += adjustedbalinc;
     });
     // 0=no
     if (option[i] == 0)
@@ -86,7 +92,7 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
     {
 
       proptab.modify(proprow, user, [&](auto &contract) {
-        contract.votedforoption[0] -= baliter.balance.amount;
+        contract.votedforoption[0] += baliter.balance.amount;
       });
     }
     // 1=yes
@@ -95,7 +101,7 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
     {
 
       proptab.modify(proprow, user, [&](auto &contract) {
-        contract.votedforoption[1] -= baliter.balance.amount;
+        contract.votedforoption[1] += baliter.balance.amount;
       });
     }
   }
