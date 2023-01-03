@@ -1,5 +1,6 @@
 #pragma once
 
+#include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/singleton.hpp>
 #include <map>
@@ -7,6 +8,12 @@
 
 using namespace std;
 using namespace eosio;
+
+namespace zeos1fractal {
+
+constexpr std::string_view rezpect_ticker{"REZPECT"};
+constexpr symbol zeos_symbol{"ZEOS", 4};
+constexpr symbol rezpect_symbol{rezpect_ticker, 4};
 
 // proposal status
 #define PS_PROPOSED 0
@@ -22,14 +29,35 @@ using namespace eosio;
 
 CONTRACT zeos1fractal : contract {
 public:
-  TABLE userspropvote {
+  struct GroupRanking {
+    std::vector<eosio::name> ranking;
+  };
+  struct AllRankings {
+    std::vector<GroupRanking> allRankings;
+  };
+
+  TABLE rewardconfig {
+    int64_t zeos_reward_amt;
+    uint8_t offset;
+  };
+  typedef eosio::singleton<"zeosrew"_n, rewardconfig> zeosrew_t;
+
+  TABLE usrspropvote {
     name user;
     vector<uint64_t> ids;
     vector<uint8_t> option;
 
     uint64_t primary_key() const { return user.value; }
   };
-  typedef eosio::multi_index<"usrspropvote"_n, usrspropvote> usrpropvote_t;
+  typedef eosio::multi_index<"usrspropvote"_n, usrspropvote> propvote_t;
+
+  TABLE usrsintrvote {
+    name user;
+    vector<uint64_t> ids;
+
+    uint64_t primary_key() const { return user.value; }
+  };
+  typedef eosio::multi_index<"usrsintrvote"_n, usrsintrvote> intrvote_t;
 
   TABLE currency_stats {
     asset supply;
@@ -64,31 +92,46 @@ public:
   };
   typedef eosio::multi_index<"members"_n, member> members_t;
 
-  // resets with every weekly event
-  TABLE introduction {
-    name user;
-    uint64_t num_blocks; // duration of the introduction
+  /*
 
-    uint64_t primary_key() const { return user.value; }
-  };
-  typedef eosio::multi_index<"intros"_n, introduction> intros_t;
+    // resets with every weekly event
+    TABLE introduction {
+      name user;
+      uint64_t num_blocks; // duration of the introduction
 
+      uint64_t primary_key() const { return user.value; }
+    };
+    typedef eosio::multi_index<"intros"_n, introduction> intros_t;
+  */
   // VRAM - ever expanding (can only add/modify items)
   TABLE proposal {
     uint64_t id;
     name user;
     string question;
     vector<uint64_t> votedforoption;
-    vector<string> answers;
+    // vector<string> answers; SINCE only YES No then no need.
     uint64_t totaltokens;
     string description;
-    string ipfs;
+    string ipfs; // when this ?
     uint64_t status;
 
     uint64_t primary_key() const { return id; }
   };
   // TODO: change to VRAM
   typedef eosio::multi_index<"proposals"_n, proposal> proposals_t;
+
+  TABLE intros {
+    uint64_t id;
+    name user;
+    string topic;
+    string description;
+    uint64_t totaltokens;
+    string ipfs; // when this ?
+
+    uint64_t primary_key() const { return id; }
+  };
+  // TODO: change to VRAM
+  typedef eosio::multi_index<"intros"_n, intros> intros_t;
 
   // ongoing vote (like EOS BP voting)
   TABLE moderator_ranking {
@@ -149,6 +192,28 @@ public:
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
 
+  // distributes rezpect and zeos
+  ACTION distribute(const AllRankings &ranks);
+
+  // Ranks the proposals submitted by the users. User has option to simply order
+  // the proposals or vote also.
+  ACTION voteprop(const name &user, const vector<uint8_t> &option,
+                  const vector<uint64_t> &ids);
+  // Ranks the introductions submitted by the users
+  ACTION voteintro(const name &user, const vector<uint64_t> &ids);
+
+  // Enables users to submit introductions
+  ACTION addintro(const uint64_t &id, const name &user, const string &topic,
+                  const string &description);
+
+  // Enables users to submit proposals
+  ACTION addprop(const uint64_t &id, const name &user, const string &question,
+                 const string &description,
+                 const vector<uint64_t> &votedforoption);
+
+  // Sets total amount to be distributed per one cycle
+  ACTION zeosreward(const asset &quantity);
+
   /// Clears all tables of the smart contract (useful if table schema needs
   /// update)
   ACTION cleartables();
@@ -180,3 +245,5 @@ public:
 
   ACTION changestate();
 };
+
+} // namespace zeos1fractal

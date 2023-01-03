@@ -1,11 +1,134 @@
 #include "zeos1fractal.hpp"
 
+namespace {
+
+// Some compile-time configuration
+const vector<name> admins{"dan"_n, "mschoenebeck"_n, "vladislav.x"_n};
+
+constexpr int64_t max_supply = static_cast<int64_t>(1'000'000'000e4);
+/*
+const auto defaultRewardConfig =
+    // rewardconfig{.zeos_reward_amt = (int64_t)100e4, .fib_offset = 5};
+    zeosrew_t{.zeos_reward_amt = (int64_t)100e4, .fib_offset = 5};
+*/
+constexpr auto min_groups = size_t{2};
+constexpr auto min_group_size = size_t{5};
+constexpr auto max_group_size = size_t{6};
+
+constexpr std::string_view rezpectTransferMemo =
+    "Zeos fractal REZPECT distribution.";
+constexpr std::string_view zeosTransferMemo =
+    "Zeos fractal participation $ZEOS reward.";
+
+// Coefficients of 6th order poly where p is phi (ratio between adjacent
+// fibonacci numbers) xp^0 + xp^1 ...
+constexpr std::array<double, max_group_size> polyCoeffs{
+    1, 1.618, 2.617924, 4.235801032, 6.85352607, 11.08900518};
+
+// Other helpers
+auto fib(uint8_t index) -> decltype(index) { //
+  return (index <= 1) ? index : fib(index - 1) + fib(index - 2);
+};
+
+} // namespace
+
 zeos1fractal::zeos1fractal(name self, name code, datastream<const char *> ds)
     : contract(self, code, ds), _global(_self, _self.value) {}
 
+void zeos1fractal::distribute(const AllRankings &ranks) {
+  require_auth(_self);
+
+  zeosrew_t rewardConfigTable(_self, _self.value);
+  // auto rewardConfig = rewardConfigTable.get_or_default(defaultRewardConfig);
+  rew newrew;
+
+  newrew = rewardConfigTable.get();
+
+  auto numGroups = ranks.allRankings.size();
+  check(numGroups >= min_groups, "Too few groups.");
+
+  auto coeffSum =
+      std::accumulate(std::begin(polyCoeffs), std::end(polyCoeffs), 0.0);
+
+  // Calculation how much EOS per coefficient.
+  auto multiplier = (double)newrew.zeos_reward_amt / (numGroups * coeffSum);
+
+  std::vector<int64_t> zeosRewards;
+  std::transform(std::begin(polyCoeffs), std::end(polyCoeffs),
+                 std::back_inserter(zeosRewards), [&](const auto &c) {
+                   auto finalzeosQuant = static_cast<int64_t>(multiplier * c);
+                   check(finalzeosQuant > 0,
+                         "Total configured ZEOS distribution is too small to "
+                         "distibute any reward to rank 1s");
+                   return finalzeosQuant;
+                 });
+
+  std::map<name, uint8_t> accounts;
+
+  for (const auto &rank : ranks.allRankings) {
+    size_t group_size = rank.ranking.size();
+    check(group_size >= min_group_size, group_too_small.data());
+    check(group_size <= max_group_size, group_too_large.data());
+
+    auto rankIndex = max_group_size - group_size;
+    for (const auto &acc : rank.ranking) {
+      check(is_account(acc), "account " + acc.to_string() + " DNE");
+      check(0 == accounts[acc]++,
+            "account " + acc.to_string() + " listed more than once");
+
+      auto fibAmount = static_cast<int64_t>(fib(rankIndex + newrew.fib_offset));
+      auto rezpectAmt = static_cast<int64_t>(
+          fibAmount * std::pow(10, rezpect_symbol.precision()));
+      auto rezpectQuantity = asset{edenAmt, rezpect_symbol};
+
+      // TODO: To better scale this contract, any distributions should not use
+      // require_recipient.
+      //       (Otherwise other user contracts could fail this action)
+      // Therefore,
+      //   Eden tokens should be added/subbed from balances directly (without
+      //   calling transfer) and EOS distribution should be stored, and then
+      //   accounts can claim the EOS themselves.
+
+      // Distribute EDEN
+      actions::issue(get_self(), {get_self(), "active"_n})
+          .send(get_self(), rezpectQuantity, "Mint new REZPECT tokens");
+      actions::transfer(get_self(), {get_self(), "active"_n})
+          .send(get_self(), acc, rezpectQuantity, rezpectTransferMemo.data());
+
+      // Distribute EOS
+      check(zeosRewards.size() > rankIndex,
+            "Shouldn't happen."); // Indicates that the group is too large, but
+                                  // we already check for that?
+      auto zeosQuantity = asset{zeosRewards[rankIndex], zeos_symbol};
+      token::actions::transfer{"thezeostoken"_n, {get_self(), "active"_n}}.send(
+          get_self(), acc, zeosQuantity, zeosTransferMemo.data());
+
+      ++rankIndex;
+    }
+  }
+}
+
+void zeos1fractal::zeosreward(const asset &quantity, const uint8_t &offset) {
+
+  require_auth(_self);
+
+  zeosrew_t rewtab(_self, _self.value);
+  rew newrew;
+
+  if (!rewtab.exists()) {
+    rewtab.set(newrew, _self);
+  } else {
+    newrew = rewtab.get();
+  }
+  newrew.zeosreward = quantity.amount;
+  newrew.offset = offset;
+
+  rewtab.set(newrew, _self);
+}
+
 // also includes picking yes or no.
-void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
-                            const vector &<uint8_t> option) {
+void zeos1fractal::voteprop(const name &user, const vector<uint8_t> &option,
+                            const vector<uint64_t> &ids) {
   require_auth(user);
 
   symbol sym = symbol("REZPECT", 4);
@@ -15,7 +138,7 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
   const auto &baliter =
       baltable.get(sym.code().raw(), "You have no REZPECT tokens brother.");
 
-  usrpropvote_t usrvote(_self, _self.value);
+  propvote_t usrvote(_self, _self.value);
   const auto &voteiter = usrvote.find(user.value);
 
   proposals_t proptab(_self, _self.value);
@@ -26,11 +149,11 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
 
   {
 
-    for (size_t i = 0; i < voteiter.ids.size(); i++) {
+    for (size_t i = 0; i < voteiter->ids.size(); i++) {
 
       // go to proposals to proposals table
       // proposals_t proptab(_self, _self.value);
-      const auto &proprow = proptab.find(voteiter.ids[i]);
+      const auto &proprow = proptab.find(voteiter->ids[i]);
 
       check(proprow == proptab.end(), "Proposal with such ID does not exist.");
 
@@ -40,7 +163,7 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
         contract.totaltokens -= adjustedbaldec;
       });
 
-      if (voteiter.option[i] == 0)
+      if (voteiter->option[i] == 0)
 
       {
 
@@ -49,7 +172,7 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
         });
       }
 
-      if (voteiter.option[i] == 1)
+      if (voteiter->option[i] == 1)
 
       {
 
@@ -115,8 +238,106 @@ void zeos1fractal::voteprop(const name &user, const vector &<uint64_t> ids,
   // the table and add new votes.
 }
 
-void zeos1fractal::voteintro(const name &user, const vector<name &> ids) {
+void zeos1fractal::voteintro(const name &user, const vector<uint64_t> &ids) {
   // will see if separate actio needed
+
+  require_auth(user);
+
+  symbol sym = symbol("REZPECT", 4);
+
+  accounts baltable(_self, user.value);
+
+  const auto &baliter =
+      baltable.get(sym.code().raw(), "You have no REZPECT tokens brother.");
+
+  intrvote_t usrvote(_self, _self.value);
+  const auto &voteiter = usrvote.find(user.value);
+
+  intros_t introtab(_self, _self.value);
+
+  if (voteiter != usrvote.end())
+
+  {
+
+    for (size_t i = 0; i < voteiter->ids.size(); i++) {
+
+      // go to proposals to proposals table
+      // proposals_t proptab(_self, _self.value);
+      const auto &introrow = introtab.find(voteiter->ids[i]);
+
+      check(introrow == introtab.end(), "Intro with such ID does not exist.");
+
+      uint64_t adjustedbaldec = baliter.balance.amount / (i + 1);
+
+      introtab.modify(introrow, user, [&](auto &contract) {
+        contract.totaltokens -= adjustedbaldec;
+      });
+    }
+  }
+
+  if (voteiter != usrvote.end())
+
+  {
+    usrvote.erase(voteiter);
+  }
+
+  // SAVING NEW USERS VOTE AND THEN ADJUSTING PROPOSAL BY TOKEN WEIGHTS
+  usrvote.emplace(_self, [&](auto &contract) {
+    contract.user = user;
+    contract.ids = ids;
+  });
+
+  for (size_t i = 0; i < ids.size(); i++) {
+
+    // proposals_t proptab(_self, _self.value);
+    const auto &introrow = introtab.find(ids[i]);
+
+    check(introrow == introtab.end(),
+          "Proposal with such ID does not exist (1).");
+
+    uint64_t adjustedbalinc = baliter.balance.amount / (i + 1);
+
+    introtab.modify(introrow, user, [&](auto &contract) {
+      contract.totaltokens += adjustedbalinc;
+    });
+  }
+}
+
+void zeos1fractal::addintro(const uint64_t &id, const name &user,
+                            const string &topic, const string &description) {
+
+  intros_t introtab(_self, _self.value);
+  auto existing = introtab.find(id);
+  check(existing == introtab.end(), "Intro with such ID exists");
+
+  introtab.emplace(_self, [&](auto &contract) {
+    contract.id = id;
+    contract.user = user;
+    contract.topic = topic;
+    contract.description = description;
+    contract.ipfs = "Mars";
+    // contract.status = 0;
+    contract.totaltokens = 0;
+  });
+}
+
+void zeos1fractal::addprop(const uint64_t &id, const name &user,
+                           const string &question, const string &description,
+                           const vector<uint64_t> &votedforoption) {
+
+  proposals_t proptab(_self, _self.value);
+  auto existing = proptab.find(id);
+  check(existing == proptab.end(), "Proposal with such ID exists");
+
+  proptab.emplace(_self, [&](auto &contract) {
+    contract.id = id;
+    contract.user = user;
+    contract.question = question;
+    contract.description = description;
+    contract.ipfs = "Mars";
+    contract.status = 0;
+    contract.totaltokens = 0;
+  });
 }
 
 void zeos1fractal::cleartables() {
