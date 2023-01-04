@@ -1,4 +1,11 @@
 #include "zeos1fractal.hpp"
+#include <limits>
+#include <map>
+#include <numeric>
+#include <string>
+
+zeos1fractal::zeos1fractal(name self, name code, datastream<const char *> ds)
+    : contract(self, code, ds), _global(_self, _self.value) {}
 
 namespace {
 
@@ -6,11 +13,7 @@ namespace {
 const vector<name> admins{"dan"_n, "mschoenebeck"_n, "vladislav.x"_n};
 
 constexpr int64_t max_supply = static_cast<int64_t>(1'000'000'000e4);
-/*
-const auto defaultRewardConfig =
-    // rewardconfig{.zeos_reward_amt = (int64_t)100e4, .fib_offset = 5};
-    zeosrew_t{.zeos_reward_amt = (int64_t)100e4, .fib_offset = 5};
-*/
+
 constexpr auto min_groups = size_t{2};
 constexpr auto min_group_size = size_t{5};
 constexpr auto max_group_size = size_t{6};
@@ -32,15 +35,107 @@ auto fib(uint8_t index) -> decltype(index) { //
 
 } // namespace
 
-zeos1fractal::zeos1fractal(name self, name code, datastream<const char *> ds)
-    : contract(self, code, ds), _global(_self, _self.value) {}
+void zeos1fractal::issuerez(const name &to, const asset &quantity,
+                            const string &memo) {
+  action(permission_level{get_self(), "active"_n}, get_self(), "issue"_n,
+         std::make_tuple(to, quantity, memo))
+      .send();
+};
+
+void zeos1fractal::send(const name &from, const name &to, const asset &quantity,
+                        const std::string &memo, const name &contract) {
+  action(permission_level{get_self(), "active"_n}, contract, "transfer"_n,
+         std::make_tuple(from, to, quantity, memo))
+      .send();
+};
+
+void zeos1fractal::validate_symbol(const symbol &symbol) {
+  // check(symbol.value == eden_symbol.value, "invalid symbol");
+  check(symbol == rezpect_symbol, "symbol precision mismatch");
+}
+
+void zeos1fractal::validate_quantity(const asset &quantity) {
+  check(quantity.is_valid(), "invalid quantity");
+  check(quantity.amount > 0, "quantity must be positive");
+}
+
+void zeos1fractal::validate_memo(const string &memo) {
+  check(memo.size() <= 256, "memo has more than 256 bytes");
+}
+
+void zeos1fractal::sub_balance(const name &owner, const asset &value) {
+  accounts from_acnts(get_self(), owner.value);
+
+  const auto &from =
+      from_acnts.get(value.symbol.code().raw(), "no balance object found");
+  check(from.balance.amount >= value.amount, "overdrawn balance");
+
+  from_acnts.modify(from, owner, [&](auto &a) { a.balance -= value; });
+}
+
+void zeos1fractal::add_balance(const name &owner, const asset &value,
+                               const name &ram_payer) {
+  accounts to_acnts(get_self(), owner.value);
+  auto to = to_acnts.find(value.symbol.code().raw());
+  if (to == to_acnts.end()) {
+    to_acnts.emplace(ram_payer, [&](auto &a) { a.balance = value; });
+  } else {
+    to_acnts.modify(to, same_payer, [&](auto &a) { a.balance += value; });
+  }
+}
+
+void zeos1fractal::transfer(const name &from, const name &to,
+                            const asset &quantity, const string &memo) {
+  check(from == get_self(), "Transfer impossibru");
+  require_auth(from);
+
+  validate_symbol(quantity.symbol);
+  validate_quantity(quantity);
+  validate_memo(memo);
+
+  check(from != to, "cannot transfer to self");
+  check(is_account(to), "to account does not exist");
+
+  require_recipient(from);
+  require_recipient(to);
+
+  auto payer = has_auth(to) ? to : from;
+
+  sub_balance(from, quantity);
+  add_balance(to, quantity, payer);
+}
+
+void zeos1fractal::issue(const name &to, const asset &quantity,
+                         const string &memo) {
+  // Only able to issue tokens to self
+  check(to == get_self(), "tokens can only be issued to issuer account");
+  // Only this contract can issue tokens
+  require_auth(get_self());
+  /*
+      check(quantity.symbol.value == rezpect_symbol.value, "invalid symbol");
+      check(quantity.symbol == rezpect_symbol, "symbol precision mismatch");
+  */
+  validate_symbol(quantity.symbol);
+  validate_quantity(quantity);
+  validate_memo(memo);
+
+  auto sym = quantity.symbol.code();
+  stats statstable(get_self(), sym.raw());
+  const auto &st = statstable.get(sym.raw());
+  check(quantity.amount <= st.max_supply.amount - st.supply.amount,
+        "quantity exceeds available supply");
+
+  statstable.modify(st, same_payer, [&](auto &s) { s.supply += quantity; });
+
+  add_balance(st.issuer, quantity, st.issuer);
+}
 
 void zeos1fractal::distribute(const AllRankings &ranks) {
   require_auth(_self);
 
   zeosrew_t rewardConfigTable(_self, _self.value);
   // auto rewardConfig = rewardConfigTable.get_or_default(defaultRewardConfig);
-  rew newrew;
+  rewardconfig newrew;
 
   newrew = rewardConfigTable.get();
 
@@ -67,8 +162,8 @@ void zeos1fractal::distribute(const AllRankings &ranks) {
 
   for (const auto &rank : ranks.allRankings) {
     size_t group_size = rank.ranking.size();
-    check(group_size >= min_group_size, group_too_small.data());
-    check(group_size <= max_group_size, group_too_large.data());
+    check(group_size >= min_group_size, "too small group");
+    check(group_size <= max_group_size, "too big group");
 
     auto rankIndex = max_group_size - group_size;
     for (const auto &acc : rank.ranking) {
@@ -79,7 +174,7 @@ void zeos1fractal::distribute(const AllRankings &ranks) {
       auto fibAmount = static_cast<int64_t>(fib(rankIndex + newrew.fib_offset));
       auto rezpectAmt = static_cast<int64_t>(
           fibAmount * std::pow(10, rezpect_symbol.precision()));
-      auto rezpectQuantity = asset{edenAmt, rezpect_symbol};
+      auto rezpectQuantity = asset{rezpectAmt, rezpect_symbol};
 
       // TODO: To better scale this contract, any distributions should not use
       // require_recipient.
@@ -90,19 +185,23 @@ void zeos1fractal::distribute(const AllRankings &ranks) {
       //   accounts can claim the EOS themselves.
 
       // Distribute EDEN
-      actions::issue(get_self(), {get_self(), "active"_n})
-          .send(get_self(), rezpectQuantity, "Mint new REZPECT tokens");
-      actions::transfer(get_self(), {get_self(), "active"_n})
-          .send(get_self(), acc, rezpectQuantity, rezpectTransferMemo.data());
+
+      issuerez(get_self(), rezpectQuantity, "Mint new REZPECT tokens");
+      send(get_self(), acc, rezpectQuantity, rezpectTransferMemo.data(),
+           get_self());
 
       // Distribute EOS
       check(zeosRewards.size() > rankIndex,
             "Shouldn't happen."); // Indicates that the group is too large, but
                                   // we already check for that?
       auto zeosQuantity = asset{zeosRewards[rankIndex], zeos_symbol};
-      token::actions::transfer{"thezeostoken"_n, {get_self(), "active"_n}}.send(
-          get_self(), acc, zeosQuantity, zeosTransferMemo.data());
-
+      send(get_self(), acc, rezpectQuantity, rezpectTransferMemo.data(),
+           "thezeostoken"_n);
+      /*
+            token::actions::transfer{"thezeostoken"_n, {get_self(),
+         "active"_n}}.send( get_self(), acc, zeosQuantity,
+         zeosTransferMemo.data());
+      */
       ++rankIndex;
     }
   }
@@ -113,15 +212,15 @@ void zeos1fractal::zeosreward(const asset &quantity, const uint8_t &offset) {
   require_auth(_self);
 
   zeosrew_t rewtab(_self, _self.value);
-  rew newrew;
+  rewardconfig newrew;
 
   if (!rewtab.exists()) {
     rewtab.set(newrew, _self);
   } else {
     newrew = rewtab.get();
   }
-  newrew.zeosreward = quantity.amount;
-  newrew.offset = offset;
+  newrew.zeos_reward_amt = quantity.amount;
+  newrew.fib_offset = offset;
 
   rewtab.set(newrew, _self);
 }
@@ -315,7 +414,6 @@ void zeos1fractal::addintro(const uint64_t &id, const name &user,
     contract.user = user;
     contract.topic = topic;
     contract.description = description;
-    contract.ipfs = "Mars";
     // contract.status = 0;
     contract.totaltokens = 0;
   });
@@ -334,7 +432,6 @@ void zeos1fractal::addprop(const uint64_t &id, const name &user,
     contract.user = user;
     contract.question = question;
     contract.description = description;
-    contract.ipfs = "Mars";
     contract.status = 0;
     contract.totaltokens = 0;
   });

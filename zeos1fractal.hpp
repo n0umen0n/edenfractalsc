@@ -5,16 +5,27 @@
 #include <eosio/singleton.hpp>
 #include <map>
 #include <vector>
-
+#include <string>
+#include <cmath>
+/*
+using namespace eosio;
+using std::string;
+using std::vector;
+*/
 using namespace std;
 using namespace eosio;
-
-namespace zeos1fractal {
 
 constexpr std::string_view rezpect_ticker{"REZPECT"};
 constexpr symbol zeos_symbol{"ZEOS", 4};
 constexpr symbol rezpect_symbol{rezpect_ticker, 4};
 
+
+//namespace zeos1fractal {
+/*
+constexpr std::string_view rezpect_ticker{"REZPECT"};
+constexpr symbol zeos_symbol{"ZEOS", 4};
+constexpr symbol rezpect_symbol{rezpect_ticker, 4};
+*/
 // proposal status
 #define PS_PROPOSED 0
 #define PS_UNDER_REVIEW 1
@@ -29,6 +40,9 @@ constexpr symbol rezpect_symbol{rezpect_ticker, 4};
 
 CONTRACT zeos1fractal : contract {
 public:
+
+
+
   struct GroupRanking {
     std::vector<eosio::name> ranking;
   };
@@ -38,7 +52,7 @@ public:
 
   TABLE rewardconfig {
     int64_t zeos_reward_amt;
-    uint8_t offset;
+    uint8_t fib_offset;
   };
   typedef eosio::singleton<"zeosrew"_n, rewardconfig> zeosrew_t;
 
@@ -112,7 +126,6 @@ public:
     // vector<string> answers; SINCE only YES No then no need.
     uint64_t totaltokens;
     string description;
-    string ipfs; // when this ?
     uint64_t status;
 
     uint64_t primary_key() const { return id; }
@@ -126,7 +139,6 @@ public:
     string topic;
     string description;
     uint64_t totaltokens;
-    string ipfs; // when this ?
 
     uint64_t primary_key() const { return id; }
   };
@@ -192,6 +204,15 @@ public:
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
 
+
+  ACTION zeosreward(const asset &quantity, const uint8_t &offset);
+     
+       
+  ACTION transfer(const name& from, const name& to, const asset& quantity, const string& memo);
+
+  //standard eosio.token action to issue tokens
+  ACTION issue(const name& to, const asset& quantity, const string& memo);
+
   // distributes rezpect and zeos
   ACTION distribute(const AllRankings &ranks);
 
@@ -244,6 +265,24 @@ public:
   ACTION setevent(const uint64_t &block_height);
 
   ACTION changestate();
+
+private:
+
+void validate_symbol(const symbol& symbol);
+
+void validate_quantity(const asset& quantity);
+
+void validate_memo(const string& memo);
+
+void sub_balance(const name& owner, const asset& value);
+
+void add_balance(const name& owner, const asset& value, const name& ram_payer);
+
+void send(const name& from, const name& to, const asset&  quantity, const std::string& memo, const name& contract);
+
+void issuerez(const name& to, const asset& quantity, const string& memo);
+
+
 };
 
-} // namespace zeos1fractal
+////}; // namespace zeos1fractal

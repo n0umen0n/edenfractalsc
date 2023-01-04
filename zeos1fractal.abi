@@ -4,6 +4,26 @@
     "types": [],
     "structs": [
         {
+            "name": "AllRankings",
+            "base": "",
+            "fields": [
+                {
+                    "name": "allRankings",
+                    "type": "GroupRanking[]"
+                }
+            ]
+        },
+        {
+            "name": "GroupRanking",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ranking",
+                    "type": "name[]"
+                }
+            ]
+        },
+        {
             "name": "account",
             "base": "",
             "fields": [
@@ -108,6 +128,16 @@
             ]
         },
         {
+            "name": "distribute",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ranks",
+                    "type": "AllRankings"
+                }
+            ]
+        },
+        {
             "name": "global",
             "base": "",
             "fields": [
@@ -203,9 +233,23 @@
                 {
                     "name": "totaltokens",
                     "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "issue",
+            "base": "",
+            "fields": [
+                {
+                    "name": "to",
+                    "type": "name"
                 },
                 {
-                    "name": "ipfs",
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
                     "type": "string"
                 }
             ]
@@ -339,10 +383,6 @@
                     "type": "string"
                 },
                 {
-                    "name": "ipfs",
-                    "type": "string"
-                },
-                {
                     "name": "status",
                     "type": "uint64"
                 }
@@ -359,6 +399,20 @@
                 {
                     "name": "ranking",
                     "type": "uint64[]"
+                }
+            ]
+        },
+        {
+            "name": "rewardconfig",
+            "base": "",
+            "fields": [
+                {
+                    "name": "zeos_reward_amt",
+                    "type": "int64"
+                },
+                {
+                    "name": "fib_offset",
+                    "type": "uint8"
                 }
             ]
         },
@@ -425,6 +479,28 @@
             ]
         },
         {
+            "name": "transfer",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
             "name": "usrsintrvote",
             "base": "",
             "fields": [
@@ -487,6 +563,20 @@
                     "type": "uint64[]"
                 }
             ]
+        },
+        {
+            "name": "zeosreward",
+            "base": "",
+            "fields": [
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "offset",
+                    "type": "uint8"
+                }
+            ]
         }
     ],
     "actions": [
@@ -516,8 +606,18 @@
             "ricardian_contract": ""
         },
         {
+            "name": "distribute",
+            "type": "distribute",
+            "ricardian_contract": ""
+        },
+        {
             "name": "init",
             "type": "init",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "issue",
+            "type": "issue",
             "ricardian_contract": ""
         },
         {
@@ -551,6 +651,11 @@
             "ricardian_contract": ""
         },
         {
+            "name": "transfer",
+            "type": "transfer",
+            "ricardian_contract": ""
+        },
+        {
             "name": "voteintro",
             "type": "voteintro",
             "ricardian_contract": ""
@@ -558,6 +663,11 @@
         {
             "name": "voteprop",
             "type": "voteprop",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "zeosreward",
+            "type": "zeosreward",
             "ricardian_contract": ""
         }
     ],
@@ -621,6 +731,13 @@
         {
             "name": "propranks",
             "type": "proposal_ranking",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "rewardconfig",
+            "type": "rewardconfig",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
