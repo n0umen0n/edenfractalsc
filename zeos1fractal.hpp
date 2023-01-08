@@ -1,12 +1,12 @@
 #pragma once
 
+#include <cmath>
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/singleton.hpp>
 #include <map>
-#include <vector>
 #include <string>
-#include <cmath>
+#include <vector>
 /*
 using namespace eosio;
 using std::string;
@@ -19,8 +19,7 @@ constexpr std::string_view rezpect_ticker{"REZPECT"};
 constexpr symbol zeos_symbol{"ZEOS", 4};
 constexpr symbol rezpect_symbol{rezpect_ticker, 4};
 
-
-//namespace zeos1fractal {
+// namespace zeos1fractal {
 /*
 constexpr std::string_view rezpect_ticker{"REZPECT"};
 constexpr symbol zeos_symbol{"ZEOS", 4};
@@ -40,9 +39,6 @@ constexpr symbol rezpect_symbol{rezpect_ticker, 4};
 
 CONTRACT zeos1fractal : contract {
 public:
-
-
-
   struct GroupRanking {
     std::vector<eosio::name> ranking;
   };
@@ -180,6 +176,14 @@ public:
   };
   typedef eosio::multi_index<"joins"_n, joined> joins_t;
 
+  TABLE group {
+    uint64_t id;
+    std::vector<name> users;
+
+    uint64_t primary_key() const { return id; }
+  };
+  typedef eosio::multi_index<"groups"_n, group> groups_t;
+
   // Singleton - Global stats
   TABLE global {
     uint64_t state;
@@ -204,14 +208,13 @@ public:
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
 
-
   ACTION zeosreward(const asset &quantity, const uint8_t &offset);
-     
-       
-  ACTION transfer(const name& from, const name& to, const asset& quantity, const string& memo);
 
-  //standard eosio.token action to issue tokens
-  ACTION issue(const name& to, const asset& quantity, const string& memo);
+  ACTION transfer(const name &from, const name &to, const asset &quantity,
+                  const string &memo);
+
+  // standard eosio.token action to issue tokens
+  ACTION issue(const name &to, const asset &quantity, const string &memo);
 
   // distributes rezpect and zeos
   ACTION distribute(const AllRankings &ranks);
@@ -243,7 +246,7 @@ public:
   ACTION init();
 
   /// Creates a new member account for this fractal (allocates RAM)
-  ACTION signup(const name &user);
+  // ACTION signup(const name &user);
 
   /// Joins the current event
   ACTION join(const name &user);
@@ -267,22 +270,23 @@ public:
   ACTION changestate();
 
 private:
+  void validate_symbol(const symbol &symbol);
 
-void validate_symbol(const symbol& symbol);
+  void validate_quantity(const asset &quantity);
 
-void validate_quantity(const asset& quantity);
+  void validate_memo(const string &memo);
 
-void validate_memo(const string& memo);
+  void sub_balance(const name &owner, const asset &value);
 
-void sub_balance(const name& owner, const asset& value);
+  void add_balance(const name &owner, const asset &value,
+                   const name &ram_payer);
 
-void add_balance(const name& owner, const asset& value, const name& ram_payer);
+  void send(const name &from, const name &to, const asset &quantity,
+            const std::string &memo, const name &contract);
 
-void send(const name& from, const name& to, const asset&  quantity, const std::string& memo, const name& contract);
+  void issuerez(const name &to, const asset &quantity, const string &memo);
 
-void issuerez(const name& to, const asset& quantity, const string& memo);
-
-
+  void dogroups();
 };
 
 ////}; // namespace zeos1fractal

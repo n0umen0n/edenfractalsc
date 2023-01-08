@@ -35,6 +35,39 @@ auto fib(uint8_t index) -> decltype(index) { //
 
 } // namespace
 
+void zeos1fractal::dogroups() {
+
+  joins_t _joined(_self, _self.value);
+
+  // this can be replaced by counter in separate table, that tracks how many
+  // have joined.
+  auto usersize = std::distance(_joined.cbegin(), _joined.cend());
+
+  while (usersize > 0) {
+    std::vector<name> group_users;
+    // Create a group of size 6 if there are at least 6 remaining users,
+    // or a group of size 5 if there are at least 5 but fewer than 6 remaining
+    // users, or a group of size equal to the number of remaining users if there
+    // are fewer than 5
+    size_t group_size = (usersize >= 6) ? 6 : (usersize >= 5) ? 5 : usersize;
+    for (size_t i = 0; i < group_size; i++) {
+      auto itr = _joined.begin();
+      // std::advance(itr, std::rand() % usersize);
+      group_users.push_back(itr->user);
+      _joined.erase(itr);
+    }
+
+    groups_t _groups(_self, _self.value);
+    // Add the group to the `groups` table
+    _groups.emplace(get_self(), [&](auto &row) {
+      row.id = _groups.available_primary_key();
+      row.users = group_users;
+    });
+  }
+
+  dogroups();
+};
+
 void zeos1fractal::issuerez(const name &to, const asset &quantity,
                             const string &memo) {
   action(permission_level{get_self(), "active"_n}, get_self(), "issue"_n,
@@ -490,6 +523,7 @@ void zeos1fractal::init() {
       _self);
 }
 
+/*
 void zeos1fractal::signup(const name &user) {
   require_auth(user);
   members_t members(_self, _self.value);
@@ -511,11 +545,25 @@ void zeos1fractal::signup(const name &user) {
   // for later respect token issuance
 }
 
+*/
+
 void zeos1fractal::join(const name &user) {
   require_auth(user);
   members_t members(_self, _self.value);
-  check(members.find(user.value) != members.end(),
-        "user is not signed up yet!");
+  //"user is not signed up yet!")
+  if (members.find(user.value) != members.end()) {
+    members.emplace(user, [&](auto &row) {
+      row.user = user;
+      row.links = map<string, string>();
+      row.zeos_earned = 0;
+      row.respect_earned = 0;
+      row.accept_moderator = false;
+      row.accept_delegate = false;
+      row.has_been_delegate = false;
+      row.is_banned = false;
+    });
+  }
+
   joins_t joins(_self, _self.value);
   check(joins.find(user.value) == joins.end(), "user has joined already!");
   check(_global.exists(), "'global' not initialized! call 'init' first");
