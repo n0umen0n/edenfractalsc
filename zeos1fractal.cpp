@@ -35,6 +35,93 @@ auto fib(uint8_t index) -> decltype(index) { //
 
 } // namespace
 
+void zeos1fractal::electdeleg(const name &elector, const name &delegate,
+                              const uint64_t &groupnr) {
+
+  require_auth(elector);
+
+  check(is_account(elector), "Elector's account does not exist.");
+  check(is_account(delegate), "Delegate's account does not exist.");
+
+  electinf_t singleton(_self, _self.value);
+
+  /*
+      electinf_t singleton(default_contract_account,
+     default_contract_account.value); auto serks =
+     singleton.get_or_default(defaultElectionInf);
+
+      check(serks.starttime + eleclimit > current_time_point(),
+     electionEnded.data());
+  */
+  // delegates_t table(_self, serks.electionr);
+
+  delegates_t table(_self, 1);
+
+  if (table.find(elector.value) == table.end()) {
+    table.emplace(elector, [&](auto &row) {
+      row.elector = elector;
+      row.delegate = delegate;
+      row.groupNr = groupnr;
+    });
+  } else {
+    check(false, "You can only pick one delegate per election my friend.");
+  }
+  /*
+      const uint64_t expiredcouncil = serks.electionNr - councileraser;
+
+      DelegatesTable tablesec(default_contract_account, expiredcouncil);
+
+      for (auto iter = tablesec.begin(); iter != tablesec.end();)
+
+      {
+          tablesec.erase(iter++);
+      }
+  */
+}
+
+void zeos1fractal::submitcons(const uint64_t &groupnr,
+                              const std::vector<name> &rankings,
+                              const name &submitter) {
+  /*
+    require_auth(submitter);
+
+    size_t group_size = rankings.size();
+
+    check(group_size >= min_group_size, group_too_small.data());
+    check(group_size <= max_group_size, group_too_large.data());
+
+    check(is_account(submitter), "Submitter's account does not exist.");
+
+    for (size_t i = 0; i < rankings.size(); i++) {
+        std::string rankname = rankings[i].to_string();
+
+        check(is_account(rankings[i]), rankname + " account does not exist.");
+    }
+
+    check(groupnr >= 1, "Group number error.");
+
+    ElectionCountSingleton singleton(default_contract_account,
+    default_contract_account.value); auto serks =
+    singleton.get_or_default(defaultElectionInf);
+
+    check(serks.starttime + eleclimit > current_time_point(),
+    electionEnded.data());
+
+    ConsenzusTable table(default_contract_account, serks.electionNr);
+
+    if (table.find(submitter.value) == table.end()) {
+        table.emplace(submitter, [&](auto& row) {
+            row.rankings = rankings;
+            row.submitter = submitter;
+            row.groupNr = groupnr;
+        });
+    }
+    else {
+        check(false, "You can vote only once my friend.");
+    }
+   */
+}
+
 void zeos1fractal::dogroups() {
 
   joins_t _joined(_self, _self.value);
@@ -52,7 +139,14 @@ void zeos1fractal::dogroups() {
     size_t group_size = (usersize >= 6) ? 6 : (usersize >= 5) ? 5 : usersize;
     for (size_t i = 0; i < group_size; i++) {
       auto itr = _joined.begin();
-      // std::advance(itr, std::rand() % usersize);
+
+      uint32_t block_num = current_block_number();
+      char *seed = reinterpret_cast<char *>(&block_num);
+      checksum256 randomness = sha256(seed, sizeof(uint32_t));
+
+      uint32_t randomint = *(uint32_t *)&randomness;
+
+      std::advance(itr, randomint % usersize);
       group_users.push_back(itr->user);
       _joined.erase(itr);
     }
@@ -63,9 +157,9 @@ void zeos1fractal::dogroups() {
       row.id = _groups.available_primary_key();
       row.users = group_users;
     });
-  }
 
-  dogroups();
+    dogroups();
+  }
 };
 
 void zeos1fractal::issuerez(const name &to, const asset &quantity,

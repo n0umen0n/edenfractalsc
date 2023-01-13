@@ -1,12 +1,16 @@
 #pragma once
 
 #include <cmath>
+// #include <crypto.h>
 #include <eosio/asset.hpp>
+#include <eosio/crypto.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/singleton.hpp>
+// #include <eosiolib/crypto.h>
 #include <map>
 #include <string>
 #include <vector>
+
 /*
 using namespace eosio;
 using std::string;
@@ -46,11 +50,23 @@ public:
     std::vector<GroupRanking> allRankings;
   };
 
+  TABLE delegates {
+    uint64_t groupnr;
+    eosio::name elector;
+    eosio::name delegate;
+
+    uint64_t primary_key() const { return elector.value; }
+  };
+  typedef eosio::multi_index<"delegates"_n, delegates> delegates_t;
+
   TABLE rewardconfig {
     int64_t zeos_reward_amt;
     uint8_t fib_offset;
   };
   typedef eosio::singleton<"zeosrew"_n, rewardconfig> zeosrew_t;
+
+  TABLE electioninf { uint64_t electionnr; };
+  typedef eosio::singleton<"electinf"_n, electioninf> electinf_t;
 
   TABLE usrspropvote {
     name user;
@@ -207,6 +223,12 @@ public:
   eosio::singleton<"global"_n, global> _global;
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
+
+  ACTION electdeleg(const name &elector, const name &delegate,
+                    const uint64_t &groupnr);
+
+  ACTION submitcons(const uint64_t &groupnr, const std::vector<name> &rankings,
+                    const name &submitter);
 
   ACTION zeosreward(const asset &quantity, const uint8_t &offset);
 
