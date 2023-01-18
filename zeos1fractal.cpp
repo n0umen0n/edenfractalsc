@@ -17,6 +17,9 @@ constexpr int64_t max_supply = static_cast<int64_t>(1'000'000'000e4);
 constexpr auto min_groups = size_t{2};
 constexpr auto min_group_size = size_t{5};
 constexpr auto max_group_size = size_t{6};
+// Instead of that declare inside the table
+// const auto defaultRewardConfig =
+// rewardconfig{.zeos_reward_amt = (int64_t)100e4, .fib_offset = 5};
 
 constexpr std::string_view rezpectTransferMemo =
     "Zeos fractal REZPECT distribution.";
@@ -82,7 +85,64 @@ void zeos1fractal::electdeleg(const name &elector, const name &delegate,
 void zeos1fractal::submitcons(const uint64_t &groupnr,
                               const std::vector<name> &rankings,
                               const name &submitter) {
+
   /*
+  1. check whether user is in
+  */
+
+  require_auth(submitter);
+
+  // Check whether user is a part of a group he is submitting consensus for.
+
+  groups_t _groups(_self, _self.value);
+
+  const auto &groupiter = _groups.get(groupnr, "No group with such ID.");
+
+  bool exists = false;
+  for (int i = 0; i < rankings.size(); i++) {
+    if (groupiter.users[i] == submitter) {
+      exists = true;
+      break;
+    }
+  }
+  check(exists, "Account name not found in group");
+
+  size_t group_size = rankings.size();
+  check(group_size >= min_group_size, "too small group");
+  check(group_size <= max_group_size, "too big group");
+
+  for (size_t i = 0; i < rankings.size(); i++) {
+    std::string rankname = rankings[i].to_string();
+
+    check(is_account(rankings[i]), rankname + " account does not exist.");
+  }
+
+  // Getting current election nr
+  electinf_t electab(_self, _self.value);
+  electioninf elecitr;
+
+  elecitr = electab.get();
+
+  consensus_t constable(_self, elecitr.electionnr);
+
+  if (constable.find(submitter.value) == constable.end()) {
+    constable.emplace(submitter, [&](auto &row) {
+      row.rankings = rankings;
+      row.submitter = submitter;
+      row.groupNr = groupnr;
+    });
+  } else {
+    check(false, "You can vote only once my friend.");
+  }
+
+  /*
+
+Siin võtta
+
+if user is not part of the vector then abort submitcons.
+
+maybe check that the number of elemtns in the vector is the same.
+
     require_auth(submitter);
 
     size_t group_size = rankings.size();
@@ -111,7 +171,7 @@ void zeos1fractal::submitcons(const uint64_t &groupnr,
 
     if (table.find(submitter.value) == table.end()) {
         table.emplace(submitter, [&](auto& row) {
-            row.rankings = rankings;
+            row.rankings = rankings;vv
             row.submitter = submitter;
             row.groupNr = groupnr;
         });

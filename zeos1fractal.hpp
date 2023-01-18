@@ -50,6 +50,23 @@ public:
     std::vector<GroupRanking> allRankings;
   };
 
+  TABLE consensus {
+    std::vector<eosio::name> rankings;
+    uint64_t groupnr;
+    eosio::name submitter;
+
+    uint64_t primary_key() const { return submitter.value; }
+
+    uint64_t by_secondary() const { return groupNr; }
+  };
+
+  typedef eosio::multi_index<
+      "conensus"_n, consensus,
+      eosio::indexed_by<
+          "bygroupnr"_n,
+          eosio::const_mem_fun<consensus, uint64_t, &consensus::by_secondary>>>
+      consensus_t;
+
   TABLE delegates {
     uint64_t groupnr;
     eosio::name elector;
