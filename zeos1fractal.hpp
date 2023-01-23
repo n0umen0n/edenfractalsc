@@ -57,7 +57,7 @@ public:
 
     uint64_t primary_key() const { return submitter.value; }
 
-    uint64_t by_secondary() const { return groupNr; }
+    uint64_t by_secondary() const { return groupnr; }
   };
 
   typedef eosio::multi_index<
@@ -67,14 +67,16 @@ public:
           eosio::const_mem_fun<consensus, uint64_t, &consensus::by_secondary>>>
       consensus_t;
 
-  TABLE delegates {
-    uint64_t groupnr;
-    eosio::name elector;
-    eosio::name delegate;
+  /*
+    TABLE delegates {
+      uint64_t groupnr;
+      eosio::name elector;
+      eosio::name delegate;
 
-    uint64_t primary_key() const { return elector.value; }
-  };
-  typedef eosio::multi_index<"delegates"_n, delegates> delegates_t;
+      uint64_t primary_key() const { return elector.value; }
+    };
+    typedef eosio::multi_index<"delegates"_n, delegates> delegates_t;
+  */
 
   TABLE rewardconfig {
     int64_t zeos_reward_amt;
@@ -240,10 +242,10 @@ public:
   eosio::singleton<"global"_n, global> _global;
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
-
-  ACTION electdeleg(const name &elector, const name &delegate,
-                    const uint64_t &groupnr);
-
+  /*
+    ACTION electdeleg(const name &elector, const name &delegate,
+                      const uint64_t &groupnr);
+  */
   ACTION submitcons(const uint64_t &groupnr, const std::vector<name> &rankings,
                     const name &submitter);
 

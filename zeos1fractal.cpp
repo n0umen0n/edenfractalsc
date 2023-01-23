@@ -37,26 +37,18 @@ auto fib(uint8_t index) -> decltype(index) { //
 };
 
 } // namespace
+/*
+
+NOT IN THE BEGINNING.
 
 void zeos1fractal::electdeleg(const name &elector, const name &delegate,
                               const uint64_t &groupnr) {
-
   require_auth(elector);
 
   check(is_account(elector), "Elector's account does not exist.");
   check(is_account(delegate), "Delegate's account does not exist.");
 
   electinf_t singleton(_self, _self.value);
-
-  /*
-      electinf_t singleton(default_contract_account,
-     default_contract_account.value); auto serks =
-     singleton.get_or_default(defaultElectionInf);
-
-      check(serks.starttime + eleclimit > current_time_point(),
-     electionEnded.data());
-  */
-  // delegates_t table(_self, serks.electionr);
 
   delegates_t table(_self, 1);
 
@@ -69,26 +61,16 @@ void zeos1fractal::electdeleg(const name &elector, const name &delegate,
   } else {
     check(false, "You can only pick one delegate per election my friend.");
   }
-  /*
-      const uint64_t expiredcouncil = serks.electionNr - councileraser;
 
-      DelegatesTable tablesec(default_contract_account, expiredcouncil);
 
-      for (auto iter = tablesec.begin(); iter != tablesec.end();)
-
-      {
-          tablesec.erase(iter++);
-      }
-  */
 }
+*/
 
 void zeos1fractal::submitcons(const uint64_t &groupnr,
                               const std::vector<name> &rankings,
                               const name &submitter) {
 
-  /*
-  1. check whether user is in
-  */
+  // siia peaks lisama et saaks ainult submittida kui on 6ige period
 
   require_auth(submitter);
 
@@ -129,57 +111,11 @@ void zeos1fractal::submitcons(const uint64_t &groupnr,
     constable.emplace(submitter, [&](auto &row) {
       row.rankings = rankings;
       row.submitter = submitter;
-      row.groupNr = groupnr;
+      row.groupnr = groupnr;
     });
   } else {
     check(false, "You can vote only once my friend.");
   }
-
-  /*
-
-Siin võtta
-
-if user is not part of the vector then abort submitcons.
-
-maybe check that the number of elemtns in the vector is the same.
-
-    require_auth(submitter);
-
-    size_t group_size = rankings.size();
-
-    check(group_size >= min_group_size, group_too_small.data());
-    check(group_size <= max_group_size, group_too_large.data());
-
-    check(is_account(submitter), "Submitter's account does not exist.");
-
-    for (size_t i = 0; i < rankings.size(); i++) {
-        std::string rankname = rankings[i].to_string();
-
-        check(is_account(rankings[i]), rankname + " account does not exist.");
-    }
-
-    check(groupnr >= 1, "Group number error.");
-
-    ElectionCountSingleton singleton(default_contract_account,
-    default_contract_account.value); auto serks =
-    singleton.get_or_default(defaultElectionInf);
-
-    check(serks.starttime + eleclimit > current_time_point(),
-    electionEnded.data());
-
-    ConsenzusTable table(default_contract_account, serks.electionNr);
-
-    if (table.find(submitter.value) == table.end()) {
-        table.emplace(submitter, [&](auto& row) {
-            row.rankings = rankings;vv
-            row.submitter = submitter;
-            row.groupNr = groupnr;
-        });
-    }
-    else {
-        check(false, "You can vote only once my friend.");
-    }
-   */
 }
 
 void zeos1fractal::dogroups() {
@@ -525,7 +461,6 @@ void zeos1fractal::voteprop(const name &user, const vector<uint8_t> &option,
 }
 
 void zeos1fractal::voteintro(const name &user, const vector<uint64_t> &ids) {
-  // will see if separate actio needed
 
   require_auth(user);
 
@@ -626,6 +561,14 @@ void zeos1fractal::addprop(const uint64_t &id, const name &user,
 
 void zeos1fractal::cleartables() {
   require_auth(_self);
+
+  if (_global.exists())
+    _global.remove();
+}
+
+/*
+void zeos1fractal::cleartables() {
+  require_auth(_self);
   members_t members(_self, _self.value);
   intros_t introductions(_self, _self.value);
   modranks_t modranks(_self, _self.value);
@@ -647,10 +590,20 @@ void zeos1fractal::cleartables() {
   if (_global.exists())
     _global.remove();
 }
+*/
 
 void zeos1fractal::init() {
   require_auth(_self);
   cleartables();
+
+  // Incrementing election number, so that correct intros, proposals could be
+  // queried and new scope for consensus table.
+  electinf_t electab(_self, _self.value);
+  electioninf newevent;
+
+  newevent = electab.get();
+  newevent.electionnr += 1;
+  electab.set(newevent, _self);
 
   _global.set(
       {
@@ -757,6 +710,7 @@ void zeos1fractal::setacceptmod(const name &user, const bool &value) {
   members.modify(u, user, [&](auto &row) { row.accept_moderator = value; });
 }
 
+/*
 void zeos1fractal::setacceptdel(const name &user, const bool &value) {
   require_auth(user);
   members_t members(_self, _self.value);
@@ -765,7 +719,8 @@ void zeos1fractal::setacceptdel(const name &user, const bool &value) {
 
   members.modify(u, user, [&](auto &row) { row.accept_delegate = value; });
 }
-
+*/
+/*
 void zeos1fractal::setintro(const name &user, const uint64_t &num_blocks) {
   require_auth(user);
   members_t members(_self, _self.value);
@@ -774,7 +729,9 @@ void zeos1fractal::setintro(const name &user, const uint64_t &num_blocks) {
 
   // TODO
 }
+*/
 
+// At the end of the event set new event, initially can be done through bloks.
 void zeos1fractal::setevent(const uint64_t &block_height) {
   require_auth(_self);
   check(_global.exists(), "'global' not initialized! call 'init' first");
@@ -803,6 +760,9 @@ void zeos1fractal::changestate() {
           "too early to move into INTRODUCTION state!");
     g.state = CS_INTRODUCTION;
     _global.set(g, _self);
+
+    dogroups();
+
   } break;
 
   case CS_INTRODUCTION: {
