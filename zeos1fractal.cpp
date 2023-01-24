@@ -37,35 +37,33 @@ auto fib(uint8_t index) -> decltype(index) { //
 };
 
 } // namespace
-/*
 
-NOT IN THE BEGINNING.
+// NOT IN THE BEGINNING.
 
 void zeos1fractal::electdeleg(const name &elector, const name &delegate,
                               const uint64_t &groupnr) {
-  require_auth(elector);
+  /*
+require_auth(elector);
 
-  check(is_account(elector), "Elector's account does not exist.");
-  check(is_account(delegate), "Delegate's account does not exist.");
+check(is_account(elector), "Elector's account does not exist.");
+check(is_account(delegate), "Delegate's account does not exist.");
 
-  electinf_t singleton(_self, _self.value);
+electinf_t singleton(_self, _self.value);
 
-  delegates_t table(_self, 1);
+delegates_t table(_self, 1);
 
-  if (table.find(elector.value) == table.end()) {
-    table.emplace(elector, [&](auto &row) {
-      row.elector = elector;
-      row.delegate = delegate;
-      row.groupNr = groupnr;
-    });
-  } else {
-    check(false, "You can only pick one delegate per election my friend.");
-  }
-
-
+if (table.find(elector.value) == table.end()) {
+table.emplace(elector, [&](auto &row) {
+row.elector = elector;
+row.delegate = delegate;
+row.groupNr = groupnr;
+});
+} else {
+check(false, "You can only pick one delegate per election my friend.");
 }
-*/
 
+*/
+}
 void zeos1fractal::submitcons(const uint64_t &groupnr,
                               const std::vector<name> &rankings,
                               const name &submitter) {
@@ -622,10 +620,10 @@ void zeos1fractal::init() {
                300} // respect required to be able to vote for proposals
                     // TODO ...
           }),
-          3600, // 30 min
-          5400, // 45 min
-          5400, // 45 min
-          1200  // 10 min
+          360, // 30 min
+          540, // 45 min
+          540, // 45 min
+          120  // 10 min
       },
       _self);
 }

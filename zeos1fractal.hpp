@@ -59,7 +59,6 @@ public:
 
     uint64_t by_secondary() const { return groupnr; }
   };
-
   typedef eosio::multi_index<
       "conensus"_n, consensus,
       eosio::indexed_by<
@@ -77,14 +76,13 @@ public:
     };
     typedef eosio::multi_index<"delegates"_n, delegates> delegates_t;
   */
-
   TABLE rewardconfig {
     int64_t zeos_reward_amt;
     uint8_t fib_offset;
   };
   typedef eosio::singleton<"zeosrew"_n, rewardconfig> zeosrew_t;
 
-  TABLE electioninf { uint64_t electionnr; };
+  TABLE electioninf { uint64_t electionnr = 0; };
   typedef eosio::singleton<"electinf"_n, electioninf> electinf_t;
 
   TABLE usrspropvote {
@@ -242,10 +240,10 @@ public:
   eosio::singleton<"global"_n, global> _global;
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
-  /*
-    ACTION electdeleg(const name &elector, const name &delegate,
-                      const uint64_t &groupnr);
-  */
+
+  ACTION electdeleg(const name &elector, const name &delegate,
+                    const uint64_t &groupnr);
+
   ACTION submitcons(const uint64_t &groupnr, const std::vector<name> &rankings,
                     const name &submitter);
 
@@ -300,9 +298,9 @@ public:
   ACTION setacceptmod(const name &user, const bool &value);
 
   // Set to 'true' to accept delegate vote
-  ACTION setacceptdel(const name &user, const bool &value);
+  // ACTION setacceptdel(const name &user, const bool &value);
 
-  ACTION setintro(const name &user, const uint64_t &seconds);
+  // ACTION setintro(const name &user, const uint64_t &seconds);
 
   // TODO: add/update proposal actions
 
