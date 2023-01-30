@@ -599,7 +599,13 @@ void zeos1fractal::init() {
   electinf_t electab(_self, _self.value);
   electioninf newevent;
 
-  newevent = electab.get();
+  if (!electab.exists()) {
+    electab.set(newevent, _self);
+  } else {
+    newevent = electab.get();
+  }
+
+  // newevent = electab.get();
   newevent.electionnr += 1;
   electab.set(newevent, _self);
 
@@ -653,11 +659,11 @@ void zeos1fractal::signup(const name &user) {
 */
 
 void zeos1fractal::join(const name &user) {
-  require_auth(user);
+  //require_auth(user);
   members_t members(_self, _self.value);
   //"user is not signed up yet!")
-  if (members.find(user.value) != members.end()) {
-    members.emplace(user, [&](auto &row) {
+  if (members.find(user.value) == members.end()) {
+    members.emplace(_self, [&](auto &row) {
       row.user = user;
       row.links = map<string, string>();
       row.zeos_earned = 0;
@@ -673,12 +679,12 @@ void zeos1fractal::join(const name &user) {
   check(joins.find(user.value) == joins.end(), "user has joined already!");
   check(_global.exists(), "'global' not initialized! call 'init' first");
   auto g = _global.get();
-  check(g.next_event_block_height > 0, "no event upcoming yet!");
-  check(static_cast<uint64_t>(current_block_number()) >=
-            g.next_event_block_height - g.early_join_duration,
-        "too early to join the event!");
+  //check(g.next_event_block_height > 0, "no event upcoming yet!");
+  //check(static_cast<uint64_t>(current_block_number()) >=
+            //g.next_event_block_height - g.early_join_duration,
+     //   "too early to join the event!");
 
-  joins.emplace(user, [&](auto &row) { row.user = user; });
+  joins.emplace(_self, [&](auto &row) { row.user = user; });
 }
 
 void zeos1fractal::addlink(const name &user, const string &key,
