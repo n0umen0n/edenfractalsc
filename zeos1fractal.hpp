@@ -217,6 +217,35 @@ public:
   };
   typedef eosio::multi_index<"groups"_n, group> groups_t;
 
+  TABLE rgroup {
+    uint64_t id;
+    std::vector<name> users;
+
+    uint64_t primary_key() const { return id; }
+  };
+  typedef eosio::multi_index<"rgroups"_n, rgroup> rgroups_t;
+
+  /*
+    TABLE test1 {
+      uint64_t id;
+      std::vector<uint64_t> lastdigit;
+      std::vector<uint32_t> combo;
+
+      uint64_t primary_key() const { return id; }
+    };
+    typedef eosio::multi_index<"test"_n, test> test_t;
+  */
+
+  TABLE test1 {
+    uint64_t id;
+    std::vector<uint64_t> lastdigit;
+    std::vector<uint32_t> combo;
+    std::vector<uint64_t> intacc;
+
+    uint64_t primary_key() const { return id; }
+  };
+  typedef eosio::multi_index<"test1"_n, test1> test1_t;
+
   // Singleton - Global stats
   TABLE global {
     uint64_t state;
@@ -308,6 +337,8 @@ public:
 
   ACTION changestate();
 
+  ACTION dogroups();
+
 private:
   void validate_symbol(const symbol &symbol);
 
@@ -325,7 +356,7 @@ private:
 
   void issuerez(const name &to, const asset &quantity, const string &memo);
 
-  void dogroups();
+  // void dogroups();
 };
 
 ////}; // namespace zeos1fractal

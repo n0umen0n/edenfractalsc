@@ -156,6 +156,11 @@
             ]
         },
         {
+            "name": "dogroups",
+            "base": "",
+            "fields": []
+        },
+        {
             "name": "electdeleg",
             "base": "",
             "fields": [
@@ -477,6 +482,20 @@
             ]
         },
         {
+            "name": "rgroup",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "users",
+                    "type": "name[]"
+                }
+            ]
+        },
+        {
             "name": "setacceptmod",
             "base": "",
             "fields": [
@@ -515,6 +534,28 @@
                 {
                     "name": "submitter",
                     "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "test1",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "lastdigit",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "combo",
+                    "type": "uint32[]"
+                },
+                {
+                    "name": "intacc",
+                    "type": "uint64[]"
                 }
             ]
         },
@@ -648,6 +689,11 @@
         {
             "name": "distribute",
             "type": "distribute",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "dogroups",
+            "type": "dogroups",
             "ricardian_contract": ""
         },
         {
@@ -799,8 +845,22 @@
             "key_types": []
         },
         {
+            "name": "rgroups",
+            "type": "rgroup",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
             "name": "stat",
             "type": "currency_stats",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "test1",
+            "type": "test1",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

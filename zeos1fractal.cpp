@@ -2,6 +2,8 @@
 #include <limits>
 #include <map>
 #include <numeric>
+// #include <ranges>
+#include <algorithm>
 #include <string>
 
 zeos1fractal::zeos1fractal(name self, name code, datastream<const char *> ds)
@@ -118,43 +120,146 @@ void zeos1fractal::submitcons(const uint64_t &groupnr,
 
 void zeos1fractal::dogroups() {
 
+  groups_t _groups(_self, _self.value);
+
+  for (auto iter = _groups.begin(); iter != _groups.end();)
+
+  {
+    _groups.erase(iter++);
+  }
+
+  rgroups_t _rgroups(_self, _self.value);
+
+  for (auto iter = _rgroups.begin(); iter != _rgroups.end();)
+
+  {
+    _rgroups.erase(iter++);
+  }
+
+  std::vector<name> allusers;
+
   joins_t _joined(_self, _self.value);
 
-  // this can be replaced by counter in separate table, that tracks how many
-  // have joined.
   auto usersize = std::distance(_joined.cbegin(), _joined.cend());
 
-  while (usersize > 0) {
+  std::vector<uint64_t> viimanedig;
+
+  std::vector<uint32_t> krdicombo;
+
+  std::vector<uint64_t> intacc;
+
+  for (size_t i = 0; i < usersize; i++) {
+
     std::vector<name> group_users;
-    // Create a group of size 6 if there are at least 6 remaining users,
-    // or a group of size 5 if there are at least 5 but fewer than 6 remaining
-    // users, or a group of size equal to the number of remaining users if there
-    // are fewer than 5
-    size_t group_size = (usersize >= 6) ? 6 : (usersize >= 5) ? 5 : usersize;
-    for (size_t i = 0; i < group_size; i++) {
-      auto itr = _joined.begin();
 
-      uint32_t block_num = current_block_number();
-      char *seed = reinterpret_cast<char *>(&block_num);
-      checksum256 randomness = sha256(seed, sizeof(uint32_t));
+    auto itr = _joined.begin();
 
-      uint32_t randomint = *(uint32_t *)&randomness;
+    uint32_t block_num = current_block_number();
 
-      std::advance(itr, randomint % usersize);
-      group_users.push_back(itr->user);
-      _joined.erase(itr);
-    }
+    uint32_t block_num_mod = block_num % 1000;
+
+    uint64_t user_value_mod = itr->user.value % 1000;
+
+    uint32_t accuint = static_cast<uint32_t>(user_value_mod);
+
+    uint32_t combo = block_num_mod + user_value_mod;
+
+    char *seed = reinterpret_cast<char *>(&combo);
+
+    checksum256 randomness = sha256(seed, sizeof(uint32_t));
+
+    uint32_t randomint = *(uint32_t *)&randomness;
+
+    // Instead of randomint % 10, we can use larger number 100 or 1000. More
+    // groups more randomness. Current solution is fine for smaller number of
+    // participants.
+    uint64_t lastdigit = randomint % 10;
+
+    krdicombo.push_back(accuint);
+    viimanedig.push_back(lastdigit);
+    intacc.push_back(itr->user.value);
 
     groups_t _groups(_self, _self.value);
-    // Add the group to the `groups` table
-    _groups.emplace(get_self(), [&](auto &row) {
-      row.id = _groups.available_primary_key();
-      row.users = group_users;
-    });
 
-    dogroups();
+    auto iteraator = _groups.find(lastdigit);
+
+    if (iteraator == _groups.end()) {
+
+      group_users.push_back(itr->user);
+      //_joined.erase(itr);
+
+      _groups.emplace(_self, [&](auto &a) {
+        a.id = lastdigit;
+        a.users = group_users;
+      });
+    } else {
+      const auto &existing = _groups.get(lastdigit, "no group row");
+
+      std::vector<name> vecc_users = existing.users;
+
+      vecc_users.push_back(itr->user);
+
+      _groups.modify(existing, _self, [&](auto &a) { a.users = vecc_users; });
+    }
+
+    _joined.erase(itr);
   }
-};
+
+  test1_t testtb(_self, _self.value);
+  testtb.emplace(_self, [&](auto &a) {
+    a.id = testtb.available_primary_key();
+    a.combo = krdicombo;
+    a.lastdigit = viimanedig;
+    a.intacc = intacc;
+  });
+
+  for (size_t i = 0; i < 9; i++) {
+
+    uint64_t key = i;
+
+    groups_t _groups(_self, _self.value);
+    auto newiteraator = _groups.find(key);
+    if (newiteraator != _groups.end()) {
+
+      allusers.insert(allusers.end(), newiteraator->users.begin(),
+                      newiteraator->users.end());
+    }
+  }
+
+  int nrofvectors = (allusers.size() - 1) / 6 + 1;
+
+  // optimal number of persons per group
+  int n = 6;
+
+  std::vector<name> vec[nrofvectors];
+
+  //  each iteration of this loop process the next set of `n` elements
+  //  and store it in a vector at k'th index in `vec`
+  for (int k = 0; k < nrofvectors; ++k) {
+    // get range for the next set of `n` elements
+    auto start_itr = std::next(allusers.cbegin(), k * n);
+    auto end_itr = std::next(allusers.cbegin(), k * n + n);
+
+    vec[k].resize(n);
+
+    if (k * n + n > allusers.size()) {
+      end_itr = allusers.cend();
+      vec[k].resize(allusers.size() - k * n);
+    }
+
+    std::vector<name> randomusr;
+
+    std::copy(start_itr, end_itr, vec[k].begin());
+
+    rgroups_t _rgroups(_self, _self.value);
+    // Add the group to the `groups` table
+    _rgroups.emplace(get_self(), [&](auto &row) {
+      row.id = _rgroups.available_primary_key();
+      // row.users = randomusr;
+      row.users = vec[k];
+    });
+  }
+}
 
 void zeos1fractal::issuerez(const name &to, const asset &quantity,
                             const string &memo) {
@@ -558,7 +663,7 @@ void zeos1fractal::addprop(const uint64_t &id, const name &user,
 }
 
 void zeos1fractal::cleartables() {
-  require_auth(_self);
+  // require_auth(_self);
 
   if (_global.exists())
     _global.remove();
@@ -659,7 +764,7 @@ void zeos1fractal::signup(const name &user) {
 */
 
 void zeos1fractal::join(const name &user) {
-  //require_auth(user);
+  // require_auth(user);
   members_t members(_self, _self.value);
   //"user is not signed up yet!")
   if (members.find(user.value) == members.end()) {
@@ -679,10 +784,10 @@ void zeos1fractal::join(const name &user) {
   check(joins.find(user.value) == joins.end(), "user has joined already!");
   check(_global.exists(), "'global' not initialized! call 'init' first");
   auto g = _global.get();
-  //check(g.next_event_block_height > 0, "no event upcoming yet!");
-  //check(static_cast<uint64_t>(current_block_number()) >=
-            //g.next_event_block_height - g.early_join_duration,
-     //   "too early to join the event!");
+  // check(g.next_event_block_height > 0, "no event upcoming yet!");
+  // check(static_cast<uint64_t>(current_block_number()) >=
+  // g.next_event_block_height - g.early_join_duration,
+  //   "too early to join the event!");
 
   joins.emplace(_self, [&](auto &row) { row.user = user; });
 }
