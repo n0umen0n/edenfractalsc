@@ -100,6 +100,20 @@
             ]
         },
         {
+            "name": "avgrez",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "avg_rez_map",
+                    "type": "pair_name_uint64[]"
+                }
+            ]
+        },
+        {
             "name": "changestate",
             "base": "",
             "fields": []
@@ -142,6 +156,24 @@
                 {
                     "name": "issuer",
                     "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "delegates",
+            "base": "",
+            "fields": [
+                {
+                    "name": "groupnr",
+                    "type": "uint8"
+                },
+                {
+                    "name": "delegate",
+                    "type": "name"
+                },
+                {
+                    "name": "nrofvotes",
+                    "type": "uint8"
                 }
             ]
         },
@@ -378,6 +410,52 @@
             ]
         },
         {
+            "name": "memberz",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "links",
+                    "type": "pair_string_string[]"
+                },
+                {
+                    "name": "zeos_earned",
+                    "type": "uint64"
+                },
+                {
+                    "name": "respect_earned",
+                    "type": "uint64"
+                },
+                {
+                    "name": "accept_moderator",
+                    "type": "bool"
+                },
+                {
+                    "name": "accept_delegate",
+                    "type": "bool"
+                },
+                {
+                    "name": "has_been_delegate",
+                    "type": "bool"
+                },
+                {
+                    "name": "is_banned",
+                    "type": "bool"
+                },
+                {
+                    "name": "period_rezpect",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "meeting_counter",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
             "name": "moderator_ranking",
             "base": "",
             "fields": [
@@ -508,6 +586,11 @@
                     "type": "bool"
                 }
             ]
+        },
+        {
+            "name": "setavgmap",
+            "base": "",
+            "fields": []
         },
         {
             "name": "setevent",
@@ -646,6 +729,16 @@
             ]
         },
         {
+            "name": "voters",
+            "base": "",
+            "fields": [
+                {
+                    "name": "voter",
+                    "type": "name"
+                }
+            ]
+        },
+        {
             "name": "zeosreward",
             "base": "",
             "fields": [
@@ -722,6 +815,11 @@
             "ricardian_contract": ""
         },
         {
+            "name": "setavgmap",
+            "type": "setavgmap",
+            "ricardian_contract": ""
+        },
+        {
             "name": "setevent",
             "type": "setevent",
             "ricardian_contract": ""
@@ -761,8 +859,22 @@
             "key_types": []
         },
         {
+            "name": "avgrez",
+            "type": "avgrez",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
             "name": "conensus",
             "type": "consensus",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "delegates",
+            "type": "delegates",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
@@ -812,6 +924,13 @@
         {
             "name": "members",
             "type": "member",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "memberz",
+            "type": "memberz",
             "index_type": "i64",
             "key_names": [],
             "key_types": []
@@ -875,6 +994,13 @@
         {
             "name": "usrspropvote",
             "type": "usrspropvote",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "voters",
+            "type": "voters",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

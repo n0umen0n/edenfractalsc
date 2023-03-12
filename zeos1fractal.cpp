@@ -40,11 +40,121 @@ auto fib(uint8_t index) -> decltype(index) { //
 
 } // namespace
 
+/*
+DELEGATE ELECTION FLOW
+
+
+action electdel
+
+delegate table
+key delegate.
+number of votes.
+group number
+
+
+
+action setnewcus
+
+if new custodians less than 2 abort for this council.
+
+
+
+
+*/
+
+/*
+
+eosio updateauth
+
+{"threshold":1,"keys":[{"key":"PUB_K1_5ZUq6oapwn6n3QL5Dbuzrnex4hH76NEg3Sv5wWJMoSYWXas7PX","weight":1}],
+"accounts":[{"permission":{"actor":"edenfractest","permission":"eosio.code"},"weight":1},{"permission":
+{"actor":"homo","permission":"active"},"weight":1}],"waits":[]}
+
+*/
+
 // NOT IN THE BEGINNING.
 
+// void zeos1fractal::setavgmap(const name &user) {
+
+void zeos1fractal::setavgmap() {
+
+  require_auth(_self);
+
+  avgrez_t avgreztb(_self, _self.value);
+  // auto u = avgreztb.find(1);
+  // check(u != avgreztb.end(), "Table not initialized yet!");
+
+  avgreztb.emplace(_self, [&](auto &row) {
+    row.id = 1;
+    row.avg_rez_map = map<name, uint64_t>();
+    //  row.avg_rez_map = map<string, uint64_t>(user, 0);
+  });
+}
+/*
+  //
+  _avgrez avgreztb(_self, _self.value);
+  avgrez avgreziter;
+
+  if (!avgreztb.exists()) {
+    avgreztb.set(avgreziter, _self);
+  } else {
+    avgreziter = avgreztb.get();
+  }
+  avgreziter.avg_rez_map = map<name, uint64_t>(user, 0)
+
+                               avgreztb.set(avgreziter, _self);
+}
+*/
 void zeos1fractal::electdeleg(const name &elector, const name &delegate,
                               const uint64_t &groupnr) {
-  /*
+
+  voters_t _voters(_self, _self.value);
+  const auto &voteiter = _voters.find(elector.value);
+
+  if (voteiter == _voters.end()) {
+    _voters.emplace(_self, [&](auto &a) { a.voter = elector; });
+  } else {
+    check(false, "Baby don't hurt me.");
+  }
+
+  delegates_t _delegates(_self, _self.value);
+  const auto &deliter = _delegates.find(delegate.value);
+
+  if (deliter == _delegates.end()) {
+    _delegates.emplace(_self, [&](auto &a) {
+      a.groupnr = groupnr;
+      a.delegate = delegate;
+      a.nrofvotes = 1;
+    });
+  } else {
+
+    _delegates.modify(deliter, _self, [&](auto &a) { a.nrofvotes += 1; });
+  }
+}
+/*
+
+
+
+//check whether user is a part of a group he is submitting delegate for.
+
+//check whether delegate is in the same group as the user who submitted it.
+
+//check whether submitted group nr exists.
+
+//check delegate has enough rezpect to be a delegate.
+
+//check delegate is not already a delegate.?
+
+//check whether delegated opted to be a delegate, do we need this?
+
+//table scope should be the election nr, the primary key should be the group
+number
+
+//get how many members are in the group
+
+//
+
+
 require_auth(elector);
 
 check(is_account(elector), "Elector's account does not exist.");
@@ -65,7 +175,7 @@ check(false, "You can only pick one delegate per election my friend.");
 }
 
 */
-}
+
 void zeos1fractal::submitcons(const uint64_t &groupnr,
                               const std::vector<name> &rankings,
                               const name &submitter) {
@@ -310,6 +420,52 @@ void zeos1fractal::add_balance(const name &owner, const asset &value,
   }
 }
 
+void zeos1fractal::addavgrezp(const asset &value, const name &user) {
+  memberz_t members(_self, _self.value);
+
+  const auto &countiter =
+      members.get(user.value, "No such user in members table.");
+
+  //[countiter.meeting_counter]
+
+  auto iter = members.find(user.value);
+  if (iter == members.end()) {
+    check(false, "Should not happenx.");
+  } else {
+    members.modify(iter, _self, [&](auto &a) {
+      a.period_rezpect[countiter.meeting_counter] += value.amount;
+    });
+  }
+}
+
+void zeos1fractal::incrmetcount(const name &user) {
+  memberz_t members(_self, _self.value);
+
+  const auto &countiter =
+      members.get(user.value, "No such user in members table.");
+
+  uint8_t newcounter;
+
+  if (countiter.meeting_counter == 12)
+
+  {
+    uint8_t newcounter = 1;
+  }
+
+  else {
+
+    uint8_t newcounter = countiter.meeting_counter;
+  }
+
+  auto iter = members.find(user.value);
+  if (iter == members.end()) {
+    check(false, "Should not happen.");
+  } else {
+    members.modify(iter, _self,
+                   [&](auto &a) { a.meeting_counter = newcounter; });
+  }
+}
+
 void zeos1fractal::transfer(const name &from, const name &to,
                             const asset &quantity, const string &memo) {
   check(from == get_self(), "Transfer impossibru");
@@ -415,6 +571,8 @@ void zeos1fractal::distribute(const AllRankings &ranks) {
       issuerez(get_self(), rezpectQuantity, "Mint new REZPECT tokens");
       send(get_self(), acc, rezpectQuantity, rezpectTransferMemo.data(),
            get_self());
+
+      addavgrezp(rezpectQuantity, acc);
 
       // Distribute EOS
       check(zeosRewards.size() > rankIndex,
@@ -672,7 +830,7 @@ void zeos1fractal::cleartables() {
 /*
 void zeos1fractal::cleartables() {
   require_auth(_self);
-  members_t members(_self, _self.value);
+  memberz_t members(_self, _self.value);
   intros_t introductions(_self, _self.value);
   modranks_t modranks(_self, _self.value);
   introranks_t introranks(_self, _self.value);
@@ -742,7 +900,7 @@ void zeos1fractal::init() {
 /*
 void zeos1fractal::signup(const name &user) {
   require_auth(user);
-  members_t members(_self, _self.value);
+  memberz_t members(_self, _self.value);
   check(members.find(user.value) == members.end(),
         "user is already signed up!");
 
@@ -765,8 +923,11 @@ void zeos1fractal::signup(const name &user) {
 
 void zeos1fractal::join(const name &user) {
   // require_auth(user);
-  members_t members(_self, _self.value);
+  memberz_t members(_self, _self.value);
   //"user is not signed up yet!")
+
+  vector<uint64_t> period_rezpect = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
   if (members.find(user.value) == members.end()) {
     members.emplace(_self, [&](auto &row) {
       row.user = user;
@@ -777,7 +938,25 @@ void zeos1fractal::join(const name &user) {
       row.accept_delegate = false;
       row.has_been_delegate = false;
       row.is_banned = false;
+      row.period_rezpect = period_rezpect;
+      row.meeting_counter = 1;
+      // row.avg_rez_map = map<name, uint64_t>(user, 0);
     });
+  }
+
+  avgrez_t avgreztb(_self, _self.value);
+  auto u = avgreztb.find(1);
+  check(u != avgreztb.end(), "Table not initialized yet!");
+
+  auto entry = u->avg_rez_map.find(user);
+  if (entry == u->avg_rez_map.end()) {
+
+    // JUHUL KUI ei toimi nii nagu matthias tegi. siis proovi seda
+    //  const auto &mapiter = avgreztb.get(1, "njetu table");
+    // siia lisada emplace selle krdi
+    //     mapiter.avg_rez_tab.emplace(user, 0);
+
+    avgreztb.modify(u, user, [&](auto &row) { row.avg_rez_map[user] = 0; });
   }
 
   joins_t joins(_self, _self.value);
@@ -795,7 +974,7 @@ void zeos1fractal::join(const name &user) {
 void zeos1fractal::addlink(const name &user, const string &key,
                            const string &value) {
   require_auth(user);
-  members_t members(_self, _self.value);
+  memberz_t members(_self, _self.value);
   auto u = members.find(user.value);
   check(u != members.end(), "user is not signed up yet!");
 
@@ -812,7 +991,7 @@ void zeos1fractal::addlink(const name &user, const string &key,
 
 void zeos1fractal::setacceptmod(const name &user, const bool &value) {
   require_auth(user);
-  members_t members(_self, _self.value);
+  memberz_t members(_self, _self.value);
   auto u = members.find(user.value);
   check(u != members.end(), "user is not signed up yet!");
 
@@ -822,7 +1001,7 @@ void zeos1fractal::setacceptmod(const name &user, const bool &value) {
 /*
 void zeos1fractal::setacceptdel(const name &user, const bool &value) {
   require_auth(user);
-  members_t members(_self, _self.value);
+  memberz_t members(_self, _self.value);
   auto u = members.find(user.value);
   check(u != members.end(), "user is not signed up yet!");
 
@@ -832,7 +1011,7 @@ void zeos1fractal::setacceptdel(const name &user, const bool &value) {
 /*
 void zeos1fractal::setintro(const name &user, const uint64_t &num_blocks) {
   require_auth(user);
-  members_t members(_self, _self.value);
+  memberz_t members(_self, _self.value);
   check(members.find(user.value) != members.end(),
         "user is not signed up yet!");
 
@@ -842,6 +1021,41 @@ void zeos1fractal::setintro(const name &user, const uint64_t &num_blocks) {
 
 // At the end of the event set new event, initially can be done through bloks.
 void zeos1fractal::setevent(const uint64_t &block_height) {
+
+  // SIIN PEAB TOIMUMA CALC of avg. for each user
+
+  memberz_t members(_self, _self.value);
+
+  for (auto iter = members.begin(); iter != members.end();)
+
+  {
+
+    // sum of vector
+
+    uint64_t sum_of_elems = std::accumulate(iter->period_rezpect.begin(),
+                                            iter->period_rezpect.end(), 0);
+
+    // Create singleton for it to be adjustable
+    uint64_t nr_of_weeks = 12;
+
+    uint64_t avgrez = sum_of_elems / nr_of_weeks;
+
+    avgrez_t avgreztb(_self, _self.value);
+    auto u = avgreztb.find(1);
+    check(u != avgreztb.end(), "Table not initialized yet!");
+
+    auto entry = u->avg_rez_map.find(iter->user);
+    if (entry == u->avg_rez_map.end()) {
+      avgreztb.modify(u, _self,
+                      [&](auto &row) { row.avg_rez_map[iter->user] = avgrez; });
+    }
+
+    incrmetcount(iter->user);
+
+    // iter = members.erase(iter
+  }
+
+  /*
   require_auth(_self);
   check(_global.exists(), "'global' not initialized! call 'init' first");
   auto g = _global.get();
@@ -855,6 +1069,7 @@ void zeos1fractal::setevent(const uint64_t &block_height) {
     g.next_event_block_height = block_height;
     _global.set(g, _self);
   }
+ */
 }
 
 void zeos1fractal::changestate() {

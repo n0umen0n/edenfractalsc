@@ -65,17 +65,26 @@ public:
           "bygroupnr"_n,
           eosio::const_mem_fun<consensus, uint64_t, &consensus::by_secondary>>>
       consensus_t;
-
   /*
-    TABLE delegates {
-      uint64_t groupnr;
-      eosio::name elector;
-      eosio::name delegate;
-
-      uint64_t primary_key() const { return elector.value; }
-    };
-    typedef eosio::multi_index<"delegates"_n, delegates> delegates_t;
+    TABLE swapcouncil { eosio::name council; };
+    typedef eosio::singleton<"zeosrew"_n, rewardconfig> zeosrew_t;
   */
+  TABLE delegates {
+    uint8_t groupnr;
+    eosio::name delegate;
+    uint8_t nrofvotes;
+
+    uint64_t primary_key() const { return delegate.value; }
+  };
+  typedef eosio::multi_index<"delegates"_n, delegates> delegates_t;
+
+  TABLE voters {
+    eosio::name voter;
+
+    uint64_t primary_key() const { return voter.value; }
+  };
+  typedef eosio::multi_index<"voters"_n, voters> voters_t;
+
   TABLE rewardconfig {
     int64_t zeos_reward_amt;
     uint8_t fib_offset;
@@ -134,6 +143,33 @@ public:
     uint64_t primary_key() const { return user.value; }
   };
   typedef eosio::multi_index<"members"_n, member> members_t;
+
+  TABLE avgrez {
+    uint64_t id;
+    map<name, uint64_t> avg_rez_map;
+    // map<string, uint64_t> avg_rez_map;
+    uint64_t primary_key() const { return id; }
+  };
+  // eosio::singleton<"avgrez"_n, avgrez> _avgrez;
+  typedef eosio::multi_index<"avgrez"_n, avgrez> avgrez_t;
+
+  TABLE memberz {
+    name user;                 // EOS account name
+    map<string, string> links; // for instance: twitter.com => @mschoenebeck1 or
+                               // SSH => ssh-rsa AAAAB3NzaC1yc2E...
+    uint64_t zeos_earned;      // total amount of ZEOS received
+    uint64_t respect_earned;   // total amount of ZEOS Respect received
+    bool accept_moderator;     // accept moderator role?
+    bool accept_delegate;      // accept delegate vote?
+    bool has_been_delegate;    // has ever been delegate?
+    bool is_banned;            // is user banned from fractal?
+    vector<uint64_t>
+        period_rezpect;      // each element contains weekly respect earned
+    uint8_t meeting_counter; // shows which element in the vector to adjust.
+
+    uint64_t primary_key() const { return user.value; }
+  };
+  typedef eosio::multi_index<"memberz"_n, memberz> memberz_t;
 
   /*
 
@@ -270,6 +306,8 @@ public:
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
 
+  ACTION setavgmap();
+
   ACTION electdeleg(const name &elector, const name &delegate,
                     const uint64_t &groupnr);
 
@@ -355,6 +393,10 @@ private:
             const std::string &memo, const name &contract);
 
   void issuerez(const name &to, const asset &quantity, const string &memo);
+
+  void addavgrezp(const asset &value, const name &user);
+
+  void incrmetcount(const name &user);
 
   // void dogroups();
 };
