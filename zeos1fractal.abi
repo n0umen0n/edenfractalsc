@@ -34,6 +34,42 @@
             ]
         },
         {
+            "name": "accountauth",
+            "base": "",
+            "fields": [
+                {
+                    "name": "change1",
+                    "type": "name"
+                },
+                {
+                    "name": "change2",
+                    "type": "name"
+                },
+                {
+                    "name": "perm_child",
+                    "type": "name"
+                },
+                {
+                    "name": "perm_parent",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "addbaltest",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
             "name": "addintro",
             "base": "",
             "fields": [
@@ -110,6 +146,20 @@
                 {
                     "name": "avg_rez_map",
                     "type": "pair_name_uint64[]"
+                }
+            ]
+        },
+        {
+            "name": "baltest",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "balance",
+                    "type": "uint64"
                 }
             ]
         },
@@ -697,6 +747,11 @@
             ]
         },
         {
+            "name": "vitt",
+            "base": "",
+            "fields": []
+        },
+        {
             "name": "voteintro",
             "base": "",
             "fields": [
@@ -754,6 +809,16 @@
         }
     ],
     "actions": [
+        {
+            "name": "accountauth",
+            "type": "accountauth",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "addbaltest",
+            "type": "addbaltest",
+            "ricardian_contract": ""
+        },
         {
             "name": "addintro",
             "type": "addintro",
@@ -835,6 +900,11 @@
             "ricardian_contract": ""
         },
         {
+            "name": "vitt",
+            "type": "vitt",
+            "ricardian_contract": ""
+        },
+        {
             "name": "voteintro",
             "type": "voteintro",
             "ricardian_contract": ""
@@ -861,6 +931,13 @@
         {
             "name": "avgrez",
             "type": "avgrez",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "baltest",
+            "type": "baltest",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

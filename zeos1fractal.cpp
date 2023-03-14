@@ -487,6 +487,30 @@ void zeos1fractal::transfer(const name &from, const name &to,
   add_balance(to, quantity, payer);
 }
 
+ACTION zeos1fractal::vitt() {
+
+  baltest_t to_acnts(_self, _self.value);
+  auto row = to_acnts.get_index<name("balance")>();
+
+  for (auto it = row.begin(); it != row.end(); ++it) {
+
+    check(false, it->balance + 1);
+  }
+}
+ACTION zeos1fractal::addbaltest(const name &user, const uint64_t &quantity) {
+
+  baltest_t to_acnts(_self, _self.value);
+  auto to = to_acnts.find(user.value);
+  if (to == to_acnts.end()) {
+    to_acnts.emplace(_self, [&](auto &a) {
+      a.user = user;
+      a.balance = quantity;
+    });
+  } else {
+    to_acnts.modify(to, _self, [&](auto &a) { a.balance += quantity; });
+  }
+}
+
 void zeos1fractal::issue(const name &to, const asset &quantity,
                          const string &memo) {
   // Only able to issue tokens to self
@@ -1019,6 +1043,40 @@ void zeos1fractal::setintro(const name &user, const uint64_t &num_blocks) {
 }
 */
 
+// Changes the owner/active permissions
+void zeos1fractal::accountauth(name change1, name change2, name perm_child,
+                               name perm_parent) {
+
+  // Setup authority for contract. Choose either a new key, or account, or both.
+  authority contract_authority;
+
+  // TEST WHETHER THIS ONE HAS TO BE DUPLICATED TO ADD ANOTHER ACC.
+  //  Account to take over permission changeto@perm_child
+  permission_level_weight account1{.permission =
+                                       permission_level{change1, perm_child},
+                                   .weight = (uint16_t)1};
+
+  permission_level_weight account2{.permission =
+                                       permission_level{change2, perm_child},
+                                   .weight = (uint16_t)1};
+
+  permission_level_weight account3{.permission =
+                                       permission_level{_self, "eosio.code"_n},
+                                   .weight = (uint16_t)1};
+
+  // Key is not supplied
+  contract_authority.threshold = 1;
+  contract_authority.keys = {};
+  contract_authority.accounts = {account1, account2, account3};
+  contract_authority.waits = {};
+
+  // Remove contract permissions and replace with changeto account.
+  action(permission_level{_self, name("active")}, name("eosio"),
+         name("updateauth"),
+         std::make_tuple(_self, perm_child, perm_parent, contract_authority))
+      .send();
+} // namespace eosio
+
 // At the end of the event set new event, initially can be done through bloks.
 void zeos1fractal::setevent(const uint64_t &block_height) {
 
@@ -1053,6 +1111,8 @@ void zeos1fractal::setevent(const uint64_t &block_height) {
     incrmetcount(iter->user);
 
     // iter = members.erase(iter
+
+    // https://www.techiedelight.com/sort-map-values-cpp/
   }
 
   /*

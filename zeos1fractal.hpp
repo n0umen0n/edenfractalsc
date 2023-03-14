@@ -43,12 +43,64 @@ constexpr symbol rezpect_symbol{rezpect_ticker, 4};
 
 CONTRACT zeos1fractal : contract {
 public:
+  struct permission_level_weight {
+    permission_level permission;
+    uint16_t weight;
+
+    // explicit serialization macro is not necessary, used here only to improve
+    // compilation time
+    EOSLIB_SERIALIZE(permission_level_weight, (permission)(weight))
+  };
+
+  struct wait_weight {
+    uint32_t wait_sec;
+    uint16_t weight;
+
+    EOSLIB_SERIALIZE(wait_weight, (wait_sec)(weight))
+  };
+
+  struct key_weight {
+    public_key key;
+    uint16_t weight;
+
+    // explicit serialization macro is not necessary, used here only to improve
+    // compilation time
+    EOSLIB_SERIALIZE(key_weight, (key)(weight))
+  };
+
+  // The definition in native.hpp is different (wrong?)
+  struct authority {
+    uint32_t threshold;
+    std::vector<key_weight> keys;
+    std::vector<permission_level_weight> accounts;
+    std::vector<wait_weight> waits;
+
+    EOSLIB_SERIALIZE(authority, (threshold)(keys)(accounts)(waits))
+  };
+
   struct GroupRanking {
     std::vector<eosio::name> ranking;
   };
   struct AllRankings {
     std::vector<GroupRanking> allRankings;
   };
+
+  TABLE baltest {
+
+    name user;
+    uint64_t balance;
+
+    uint64_t primary_key() const { return user.value; }
+
+    uint64_t by_secondary() const { return balance; }
+  };
+
+  typedef eosio::multi_index<
+      "baltest"_n, baltest,
+      eosio::indexed_by<
+          "balance"_n,
+          eosio::const_mem_fun<baltest, uint64_t, &baltest::by_secondary>>>
+      baltest_t;
 
   TABLE consensus {
     std::vector<eosio::name> rankings;
@@ -65,6 +117,7 @@ public:
           "bygroupnr"_n,
           eosio::const_mem_fun<consensus, uint64_t, &consensus::by_secondary>>>
       consensus_t;
+
   /*
     TABLE swapcouncil { eosio::name council; };
     typedef eosio::singleton<"zeosrew"_n, rewardconfig> zeosrew_t;
@@ -143,7 +196,35 @@ public:
     uint64_t primary_key() const { return user.value; }
   };
   typedef eosio::multi_index<"members"_n, member> members_t;
+  /*
+    TABLE avgrezbal {
+      name user;
+      uint64_t balance;
 
+      uint64_t primary_key() const { return balance.symbol.code().raw(); }
+    };
+
+    typedef eosio::multi_index<name("accounts"), account> accounts;
+
+    TABLE avgbalance {
+
+      name user;
+      uint64_t balance;
+
+      uint64_t primary_key() const { return user.value; }
+
+      uint64_t by_secondary() const { return balance; }
+    };
+
+    typedef eosio::multi_index<
+        "avgbalance"_n, avgbalance,
+        eosio::indexed_by<"avgbalance"_n,
+                          eosio::const_mem_fun<avgbalance, uint64_t,
+                                               &avgbalance::by_secondary>>>
+        avgbalance_t;
+
+    /*
+  */
   TABLE avgrez {
     uint64_t id;
     map<name, uint64_t> avg_rez_map;
@@ -152,7 +233,6 @@ public:
   };
   // eosio::singleton<"avgrez"_n, avgrez> _avgrez;
   typedef eosio::multi_index<"avgrez"_n, avgrez> avgrez_t;
-
   TABLE memberz {
     name user;                 // EOS account name
     map<string, string> links; // for instance: twitter.com => @mschoenebeck1 or
@@ -306,6 +386,9 @@ public:
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
 
+  ACTION accountauth(name change1, name change2, name perm_child,
+                     name perm_parent);
+
   ACTION setavgmap();
 
   ACTION electdeleg(const name &elector, const name &delegate,
@@ -321,6 +404,10 @@ public:
 
   // standard eosio.token action to issue tokens
   ACTION issue(const name &to, const asset &quantity, const string &memo);
+
+  ACTION addbaltest(const name &user, const uint64_t &quantity);
+
+  ACTION vitt();
 
   // distributes rezpect and zeos
   ACTION distribute(const AllRankings &ranks);
