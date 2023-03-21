@@ -43,6 +43,13 @@ constexpr symbol rezpect_symbol{rezpect_ticker, 4};
 
 CONTRACT zeos1fractal : contract {
 public:
+  TABLE orderlead {
+    name leader;
+
+    uint64_t primary_key() const { return leader.value; }
+  };
+  typedef eosio::multi_index<"ordleaders"_n, orderlead> leaders_t;
+
   struct permission_level_weight {
     permission_level permission;
     uint16_t weight;
@@ -225,14 +232,35 @@ public:
 
     /*
   */
-  TABLE avgrez {
-    uint64_t id;
-    map<name, uint64_t> avg_rez_map;
-    // map<string, uint64_t> avg_rez_map;
-    uint64_t primary_key() const { return id; }
+
+  TABLE avgbalance {
+
+    name user;
+    uint64_t balance;
+
+    uint64_t primary_key() const { return user.value; }
+
+    uint64_t by_secondary() const { return balance; }
   };
-  // eosio::singleton<"avgrez"_n, avgrez> _avgrez;
-  typedef eosio::multi_index<"avgrez"_n, avgrez> avgrez_t;
+
+  typedef eosio::multi_index<
+      "avgbalance"_n, avgbalance,
+      eosio::indexed_by<"avgbalance"_n,
+                        eosio::const_mem_fun<avgbalance, uint64_t,
+                                             &avgbalance::by_secondary>>>
+      avgbalance_t;
+
+  /*
+    TABLE avgrez {
+      uint64_t id;
+      map<name, uint64_t> avg_rez_map;
+      // map<string, uint64_t> avg_rez_map;
+      uint64_t primary_key() const { return id; }
+    };
+    // eosio::singleton<"avgrez"_n, avgrez> _avgrez;
+    typedef eosio::multi_index<"avgrez"_n, avgrez> avgrez_t;
+
+    */
   TABLE memberz {
     name user;                 // EOS account name
     map<string, string> links; // for instance: twitter.com => @mschoenebeck1 or
@@ -386,10 +414,11 @@ public:
 
   zeos1fractal(name self, name code, datastream<const char *> ds);
 
-  ACTION accountauth(name change1, name change2, name perm_child,
-                     name perm_parent);
-
-  ACTION setavgmap();
+  /*
+    ACTION accountauth(name change1, name change2, name perm_child,
+                       name perm_parent);
+  */
+  // ACTION setavgmap();
 
   ACTION electdeleg(const name &elector, const name &delegate,
                     const uint64_t &groupnr);
@@ -407,7 +436,7 @@ public:
 
   ACTION addbaltest(const name &user, const uint64_t &quantity);
 
-  ACTION vitt();
+  // ACTION vitt();
 
   // distributes rezpect and zeos
   ACTION distribute(const AllRankings &ranks);
@@ -457,6 +486,7 @@ public:
   // ACTION setintro(const name &user, const uint64_t &seconds);
 
   // TODO: add/update proposal actions
+  ACTION delmemberz();
 
   ACTION setevent(const uint64_t &block_height);
 
@@ -464,7 +494,13 @@ public:
 
   ACTION dogroups();
 
+  ACTION addleadtest(const name &user);
+
 private:
+  void accountauth(const name &change1, const name &change2,
+                   const name &change3, const name &change4,
+                   const name &change5, const name &change6);
+
   void validate_symbol(const symbol &symbol);
 
   void validate_quantity(const asset &quantity);

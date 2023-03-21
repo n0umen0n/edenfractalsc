@@ -75,7 +75,7 @@ eosio updateauth
 // NOT IN THE BEGINNING.
 
 // void zeos1fractal::setavgmap(const name &user) {
-
+/*
 void zeos1fractal::setavgmap() {
 
   require_auth(_self);
@@ -90,6 +90,7 @@ void zeos1fractal::setavgmap() {
     //  row.avg_rez_map = map<string, uint64_t>(user, 0);
   });
 }
+*/
 /*
   //
   _avgrez avgreztb(_self, _self.value);
@@ -373,14 +374,14 @@ void zeos1fractal::dogroups() {
 
 void zeos1fractal::issuerez(const name &to, const asset &quantity,
                             const string &memo) {
-  action(permission_level{get_self(), "active"_n}, get_self(), "issue"_n,
+  action(permission_level{get_self(), "owner"_n}, get_self(), "issue"_n,
          std::make_tuple(to, quantity, memo))
       .send();
 };
 
 void zeos1fractal::send(const name &from, const name &to, const asset &quantity,
                         const std::string &memo, const name &contract) {
-  action(permission_level{get_self(), "active"_n}, contract, "transfer"_n,
+  action(permission_level{get_self(), "owner"_n}, contract, "transfer"_n,
          std::make_tuple(from, to, quantity, memo))
       .send();
 };
@@ -439,6 +440,7 @@ void zeos1fractal::addavgrezp(const asset &value, const name &user) {
 }
 
 void zeos1fractal::incrmetcount(const name &user) {
+  /*
   memberz_t members(_self, _self.value);
 
   const auto &countiter =
@@ -449,7 +451,7 @@ void zeos1fractal::incrmetcount(const name &user) {
   if (countiter.meeting_counter == 12)
 
   {
-    uint8_t newcounter = 1;
+    uint8_t newcounter = 0;
   }
 
   else {
@@ -462,7 +464,35 @@ void zeos1fractal::incrmetcount(const name &user) {
     check(false, "Should not happen.");
   } else {
     members.modify(iter, _self,
-                   [&](auto &a) { a.meeting_counter = newcounter; });
+                   [&](auto &a) { a.meeting_counter = newcounter + 1; });
+  }
+
+ */
+
+  memberz_t members(_self, _self.value);
+
+  const auto &countiter =
+      members.get(user.value, "No such user in members table.");
+
+  uint8_t newcounter;
+
+  if (countiter.meeting_counter == 12)
+
+  {
+    newcounter = 0;
+  }
+
+  else {
+
+    newcounter = countiter.meeting_counter;
+  }
+
+  auto iter = members.find(user.value);
+  if (iter == members.end()) {
+    check(false, "Should not happen.");
+  } else {
+    members.modify(iter, _self,
+                   [&](auto &a) { a.meeting_counter = newcounter + 1; });
   }
 }
 
@@ -486,7 +516,7 @@ void zeos1fractal::transfer(const name &from, const name &to,
   sub_balance(from, quantity);
   add_balance(to, quantity, payer);
 }
-
+/*
 ACTION zeos1fractal::vitt() {
 
   baltest_t to_acnts(_self, _self.value);
@@ -497,6 +527,7 @@ ACTION zeos1fractal::vitt() {
     check(false, it->balance + 1);
   }
 }
+*/
 ACTION zeos1fractal::addbaltest(const name &user, const uint64_t &quantity) {
 
   baltest_t to_acnts(_self, _self.value);
@@ -508,6 +539,23 @@ ACTION zeos1fractal::addbaltest(const name &user, const uint64_t &quantity) {
     });
   } else {
     to_acnts.modify(to, _self, [&](auto &a) { a.balance += quantity; });
+  }
+}
+
+ACTION zeos1fractal::addleadtest(const name &user) {
+
+  leaders_t leadtb(_self, _self.value);
+  leadtb.emplace(_self, [&](auto &a) { a.leader = user; });
+}
+
+ACTION zeos1fractal::delmemberz() {
+
+  memberz_t _rgroups(_self, _self.value);
+
+  for (auto iter = _rgroups.begin(); iter != _rgroups.end();)
+
+  {
+    _rgroups.erase(iter++);
   }
 }
 
@@ -593,18 +641,38 @@ void zeos1fractal::distribute(const AllRankings &ranks) {
       // Distribute EDEN
 
       issuerez(get_self(), rezpectQuantity, "Mint new REZPECT tokens");
-      send(get_self(), acc, rezpectQuantity, rezpectTransferMemo.data(),
-           get_self());
+      // send(get_self(), acc, rezpectQuantity,
+      // rezpectTransferMemo.data(),get_self());
+      send(get_self(), acc, rezpectQuantity, "testing", get_self());
 
+      // JUST FOR TESTING
+      memberz_t members(_self, _self.value);
+      //"user is not signed up yet!")
+      vector<uint64_t> period_rezpect = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+      if (members.find(acc.value) == members.end()) {
+        members.emplace(_self, [&](auto &row) {
+          row.user = acc;
+          row.links = map<string, string>();
+          row.zeos_earned = 0;
+          row.respect_earned = 0;
+          row.accept_moderator = false;
+          row.accept_delegate = false;
+          row.has_been_delegate = false;
+          row.is_banned = false;
+          row.period_rezpect = period_rezpect;
+          row.meeting_counter = 0;
+          // row.avg_rez_map = map<name, uint64_t>(user, 0);
+        });
+      }
       addavgrezp(rezpectQuantity, acc);
 
       // Distribute EOS
       check(zeosRewards.size() > rankIndex,
-            "Shouldn't happen."); // Indicates that the group is too large, but
-                                  // we already check for that?
+            "Shouldn't happen."); // Indicates that the group is too large,
+                                  // but we already check for that?
       auto zeosQuantity = asset{zeosRewards[rankIndex], zeos_symbol};
-      send(get_self(), acc, rezpectQuantity, rezpectTransferMemo.data(),
-           "thezeostoken"_n);
+      // send(get_self(), acc, rezpectQuantity, rezpectTransferMemo.data(),
+      // "thezeostoken"_n);
       /*
             token::actions::transfer{"thezeostoken"_n, {get_self(),
          "active"_n}}.send( get_self(), acc, zeosQuantity,
@@ -650,8 +718,8 @@ void zeos1fractal::voteprop(const name &user, const vector<uint8_t> &option,
 
   proposals_t proptab(_self, _self.value);
 
-  // USER HAS VOTED BEFORE, SO ADJUSTING BY HIS PREVIOUS VOTE, AND DELETING HIS
-  // VOTE TABLE
+  // USER HAS VOTED BEFORE, SO ADJUSTING BY HIS PREVIOUS VOTE, AND DELETING
+  // HIS VOTE TABLE
   if (voteiter != usrvote.end())
 
   {
@@ -963,26 +1031,29 @@ void zeos1fractal::join(const name &user) {
       row.has_been_delegate = false;
       row.is_banned = false;
       row.period_rezpect = period_rezpect;
-      row.meeting_counter = 1;
+      row.meeting_counter = 0;
       // row.avg_rez_map = map<name, uint64_t>(user, 0);
     });
   }
 
-  avgrez_t avgreztb(_self, _self.value);
-  auto u = avgreztb.find(1);
-  check(u != avgreztb.end(), "Table not initialized yet!");
+  /*
+    avgrez_t avgreztb(_self, _self.value);
+    auto u = avgreztb.find(1);
+    check(u != avgreztb.end(), "Table not initialized yet!");
 
-  auto entry = u->avg_rez_map.find(user);
-  if (entry == u->avg_rez_map.end()) {
+    auto entry = u->avg_rez_map.find(user);
+    if (entry == u->avg_rez_map.end()) {
 
-    // JUHUL KUI ei toimi nii nagu matthias tegi. siis proovi seda
-    //  const auto &mapiter = avgreztb.get(1, "njetu table");
-    // siia lisada emplace selle krdi
-    //     mapiter.avg_rez_tab.emplace(user, 0);
+      // JUHUL KUI ei toimi nii nagu matthias tegi. siis proovi seda
+      //  const auto &mapiter = avgreztb.get(1, "njetu table");
+      // siia lisada emplace selle krdi
+      //     mapiter.avg_rez_tab.emplace(user, 0);
 
-    avgreztb.modify(u, user, [&](auto &row) { row.avg_rez_map[user] = 0; });
-  }
+      avgreztb.modify(u, user, [&](auto &row) { row.avg_rez_map[user] = 0; });
 
+
+    }
+   */
   joins_t joins(_self, _self.value);
   check(joins.find(user.value) == joins.end(), "user has joined already!");
   check(_global.exists(), "'global' not initialized! call 'init' first");
@@ -1044,37 +1115,65 @@ void zeos1fractal::setintro(const name &user, const uint64_t &num_blocks) {
 */
 
 // Changes the owner/active permissions
-void zeos1fractal::accountauth(name change1, name change2, name perm_child,
-                               name perm_parent) {
 
-  // Setup authority for contract. Choose either a new key, or account, or both.
+// manipulate the owner permission.
+
+// create new permission above owner for testing? keep eosio.code in active.
+
+void zeos1fractal::accountauth(const name &change1, const name &change2,
+                               const name &change3, const name &change4,
+                               const name &change5, const name &change6) {
+
+  // Setup authority for contract. Choose either a new key, or account, or
+  // both.
   authority contract_authority;
 
   // TEST WHETHER THIS ONE HAS TO BE DUPLICATED TO ADD ANOTHER ACC.
   //  Account to take over permission changeto@perm_child
   permission_level_weight account1{.permission =
-                                       permission_level{change1, perm_child},
+                                       permission_level{change1, "active"_n},
                                    .weight = (uint16_t)1};
-
   permission_level_weight account2{.permission =
-                                       permission_level{change2, perm_child},
+                                       permission_level{change2, "active"_n},
                                    .weight = (uint16_t)1};
-
   permission_level_weight account3{.permission =
-                                       permission_level{_self, "eosio.code"_n},
+                                       permission_level{change3, "active"_n},
+                                   .weight = (uint16_t)1};
+  permission_level_weight account4{.permission =
+                                       permission_level{change4, "active"_n},
+                                   .weight = (uint16_t)1};
+  permission_level_weight account5{.permission =
+                                       permission_level{change5, "active"_n},
+                                   .weight = (uint16_t)1};
+  permission_level_weight account6{.permission =
+                                       permission_level{change6, "active"_n},
                                    .weight = (uint16_t)1};
 
   // Key is not supplied
-  contract_authority.threshold = 1;
+  contract_authority.threshold = 4;
   contract_authority.keys = {};
-  contract_authority.accounts = {account1, account2, account3};
+  contract_authority.accounts = {account1, account2, account3,
+                                 account4, account5, account6};
   contract_authority.waits = {};
 
+  /*
+
+    // Remove contract permissions and replace with changeto account.
+    action(permission_level{_self, name("active")}, name("eosio"),
+           name("updateauth"),
+           //keep empty instead of owner
+           std::make_tuple(_self, perm_child, name("owner"),
+    contract_authority)) .send();
+
+  */
+
   // Remove contract permissions and replace with changeto account.
-  action(permission_level{_self, name("active")}, name("eosio"),
-         name("updateauth"),
-         std::make_tuple(_self, perm_child, perm_parent, contract_authority))
+  action(
+      permission_level{_self, name("owner")}, name("eosio"), name("updateauth"),
+      // keep empty instead of owner
+      std::make_tuple(_self, name("active"), name("owner"), contract_authority))
       .send();
+
 } // namespace eosio
 
 // At the end of the event set new event, initially can be done through bloks.
@@ -1084,7 +1183,8 @@ void zeos1fractal::setevent(const uint64_t &block_height) {
 
   memberz_t members(_self, _self.value);
 
-  for (auto iter = members.begin(); iter != members.end();)
+  // GET AVG REZ OF EACH USER AND INCREMENT THEIR MEETING NR
+  for (auto iter = members.begin(); iter != members.end(); ++iter)
 
   {
 
@@ -1097,23 +1197,109 @@ void zeos1fractal::setevent(const uint64_t &block_height) {
     uint64_t nr_of_weeks = 12;
 
     uint64_t avgrez = sum_of_elems / nr_of_weeks;
+    /*
+        avgrez_t avgreztb(_self, _self.value);
+        auto u = avgreztb.find(1);
+        check(u != avgreztb.end(), "Table not initialized yet!");
 
-    avgrez_t avgreztb(_self, _self.value);
-    auto u = avgreztb.find(1);
-    check(u != avgreztb.end(), "Table not initialized yet!");
+        auto entry = u->avg_rez_map.find(iter->user);
+        if (entry == u->avg_rez_map.end()) {
+          avgreztb.modify(u, _self,
+                          [&](auto &row) { row.avg_rez_map[iter->user] =
+       avgrez;
+       });
+        }
+    */
 
-    auto entry = u->avg_rez_map.find(iter->user);
-    if (entry == u->avg_rez_map.end()) {
-      avgreztb.modify(u, _self,
-                      [&](auto &row) { row.avg_rez_map[iter->user] = avgrez; });
+    avgbalance_t to_acnts(_self, _self.value);
+    auto to = to_acnts.find(iter->user.value);
+    if (to == to_acnts.end()) {
+      to_acnts.emplace(_self, [&](auto &a) {
+        a.user = iter->user;
+        a.balance = avgrez;
+      });
+    } else {
+      to_acnts.modify(to, _self, [&](auto &a) { a.balance = avgrez; });
     }
 
     incrmetcount(iter->user);
 
-    // iter = members.erase(iter
-
-    // https://www.techiedelight.com/sort-map-values-cpp/
+    // avgbalance_t to_acnts(_self, _self.value);
   }
+
+  //
+  avgbalance_t new_acnts(_self, _self.value);
+
+  auto row = new_acnts.get_index<name("avgbalance")>();
+
+  // push everthing into a vector
+  // get the size of the vector
+  // get six last values
+  // order alphabetically.
+  // pass them to updateauth function.
+
+  vector<name> allmembers;
+
+  /*
+  name firstdel;
+  name seconddel;
+  name thirdddel;
+  name fourthdel;
+  name fifthdel;
+  name sixthdel;
+*/
+
+  for (auto it = row.begin(); it != row.end(); ++it) {
+
+    // check(false, it->balance + 1);
+
+    allmembers.push_back(it->user);
+  }
+
+  uint8_t size = allmembers.size();
+
+  // iter = members.erase(iter
+
+  // https://www.techiedelight.com/sort-map-values-cpp/
+
+  vector<name> no_order_leaders = {allmembers[size - 1], allmembers[size - 2],
+                                   allmembers[size - 3], allmembers[size - 4],
+                                   allmembers[size - 5], allmembers[size - 6]};
+
+  // PROBLEEM ON LEADERS TABELIS TA EI SALVESTA 2ra SINNA
+
+  leaders_t leadtbdel(_self, _self.value);
+  for (auto iterdel = leadtbdel.begin(); iterdel != leadtbdel.end();) {
+    leadtbdel.erase(iterdel++);
+  }
+
+  // check (false, no_order_leaders[3].value)
+
+  // ADD into lead table
+  for (int i = 0; i < no_order_leaders.size(); i++) {
+    // somewhere should be clear tables
+    leaders_t leadtb(_self, _self.value);
+    leadtb.emplace(_self, [&](auto &a) { a.leader = no_order_leaders[i]; });
+  }
+
+  vector<name> order_leaders;
+
+  leaders_t leadtbord(_self, _self.value);
+  for (auto iter = leadtbord.begin(); iter != leadtbord.end(); iter++) {
+    order_leaders.push_back(iter->leader);
+  }
+
+  accountauth(order_leaders[0], order_leaders[1], order_leaders[2],
+              order_leaders[3], order_leaders[4], order_leaders[5]);
+
+  /*
+  name firstdel = allmembers[size];
+  name seconddel = allmembers[size - 1];
+  name thirdddel = allmembers[size - 2];
+  name fourthdel = allmembers[size - 3];
+  name fifthdel = allmembers[size - 4];
+  name sixthdel = allmembers[size - 5];
+  */
 
   /*
   require_auth(_self);
