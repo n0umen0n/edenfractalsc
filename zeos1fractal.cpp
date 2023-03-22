@@ -427,14 +427,20 @@ void zeos1fractal::addavgrezp(const asset &value, const name &user) {
   const auto &countiter =
       members.get(user.value, "No such user in members table.");
 
-  //[countiter.meeting_counter]
+  uint8_t meeting_counter_real;
+
+  if (countiter.meeting_counter == 12) {
+    meeting_counter_real = 0;
+  } else {
+    meeting_counter_real = countiter.meeting_counter;
+  }
 
   auto iter = members.find(user.value);
   if (iter == members.end()) {
     check(false, "Should not happenx.");
   } else {
     members.modify(iter, _self, [&](auto &a) {
-      a.period_rezpect[countiter.meeting_counter] += value.amount;
+      a.period_rezpect[meeting_counter_real] = value.amount;
     });
   }
 }
