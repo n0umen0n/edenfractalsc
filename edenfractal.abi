@@ -1,0 +1,515 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.2",
+    "types": [],
+    "structs": [
+        {
+            "name": "AllRankings",
+            "base": "",
+            "fields": [
+                {
+                    "name": "allRankings",
+                    "type": "GroupRanking[]"
+                }
+            ]
+        },
+        {
+            "name": "GroupRanking",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ranking",
+                    "type": "name[]"
+                }
+            ]
+        },
+        {
+            "name": "account",
+            "base": "",
+            "fields": [
+                {
+                    "name": "balance",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "agreementx",
+            "base": "",
+            "fields": [
+                {
+                    "name": "agreement",
+                    "type": "string"
+                },
+                {
+                    "name": "versionNr",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "avgbalance",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "balance",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "close",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "consensus",
+            "base": "",
+            "fields": [
+                {
+                    "name": "rankings",
+                    "type": "name[]"
+                },
+                {
+                    "name": "groupnr",
+                    "type": "uint64"
+                },
+                {
+                    "name": "submitter",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "currency_stats",
+            "base": "",
+            "fields": [
+                {
+                    "name": "supply",
+                    "type": "asset"
+                },
+                {
+                    "name": "max_supply",
+                    "type": "asset"
+                },
+                {
+                    "name": "issuer",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "delegates",
+            "base": "",
+            "fields": [
+                {
+                    "name": "groupNr",
+                    "type": "uint64"
+                },
+                {
+                    "name": "elector",
+                    "type": "name"
+                },
+                {
+                    "name": "delegate",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "electdeleg",
+            "base": "",
+            "fields": [
+                {
+                    "name": "elector",
+                    "type": "name"
+                },
+                {
+                    "name": "delegate",
+                    "type": "name"
+                },
+                {
+                    "name": "groupnr",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "electioninfx",
+            "base": "",
+            "fields": [
+                {
+                    "name": "electionnr",
+                    "type": "uint64"
+                },
+                {
+                    "name": "starttime",
+                    "type": "time_point_sec"
+                }
+            ]
+        },
+        {
+            "name": "eosrewardamt",
+            "base": "",
+            "fields": [
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "offset",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "issue",
+            "base": "",
+            "fields": [
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "memberz",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "period_rezpect",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "meeting_counter",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "open",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "ram_payer",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "orderlead",
+            "base": "",
+            "fields": [
+                {
+                    "name": "leader",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "retire",
+            "base": "",
+            "fields": [
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "rewardconfgx",
+            "base": "",
+            "fields": [
+                {
+                    "name": "eos_reward_amt",
+                    "type": "int64"
+                },
+                {
+                    "name": "fib_offset",
+                    "type": "uint8"
+                }
+            ]
+        },
+        {
+            "name": "setagreement",
+            "base": "",
+            "fields": [
+                {
+                    "name": "agreement",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "sign",
+            "base": "",
+            "fields": [
+                {
+                    "name": "signer",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "signaturex",
+            "base": "",
+            "fields": [
+                {
+                    "name": "signer",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "startelect",
+            "base": "",
+            "fields": []
+        },
+        {
+            "name": "submitcons",
+            "base": "",
+            "fields": [
+                {
+                    "name": "groupnr",
+                    "type": "uint64"
+                },
+                {
+                    "name": "rankings",
+                    "type": "name[]"
+                },
+                {
+                    "name": "submitter",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "submitranks",
+            "base": "",
+            "fields": [
+                {
+                    "name": "ranks",
+                    "type": "AllRankings"
+                }
+            ]
+        },
+        {
+            "name": "transfer",
+            "base": "",
+            "fields": [
+                {
+                    "name": "from",
+                    "type": "name"
+                },
+                {
+                    "name": "to",
+                    "type": "name"
+                },
+                {
+                    "name": "quantity",
+                    "type": "asset"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "unsign",
+            "base": "",
+            "fields": [
+                {
+                    "name": "signer",
+                    "type": "name"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "close",
+            "type": "close",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "electdeleg",
+            "type": "electdeleg",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "eosrewardamt",
+            "type": "eosrewardamt",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "issue",
+            "type": "issue",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "open",
+            "type": "open",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "retire",
+            "type": "retire",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setagreement",
+            "type": "setagreement",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "sign",
+            "type": "sign",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "startelect",
+            "type": "startelect",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "submitcons",
+            "type": "submitcons",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "submitranks",
+            "type": "submitranks",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "transfer",
+            "type": "transfer",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "unsign",
+            "type": "unsign",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "accounts",
+            "type": "account",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "agreementx",
+            "type": "agreementx",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "avgbalance",
+            "type": "avgbalance",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "conensus",
+            "type": "consensus",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "delegates",
+            "type": "delegates",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "electioninfx",
+            "type": "electioninfx",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "memberz",
+            "type": "memberz",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "ordleaders",
+            "type": "orderlead",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "rewardconfgx",
+            "type": "rewardconfgx",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "signaturesx",
+            "type": "signaturex",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "stat",
+            "type": "currency_stats",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": [],
+    "action_results": []
+}
